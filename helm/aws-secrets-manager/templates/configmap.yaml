@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: { { include "aws-secrets-manager.fullname" . } }
+  labels: { { - include "aws-secrets-manager.labels" . | nindent 4 } }
+data:
+  AWS_ACCOUNTS: { { .Values.configMap.AWS_ACCOUNTS | quote } }

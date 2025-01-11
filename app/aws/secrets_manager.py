@@ -2,23 +2,21 @@ import boto3
 import json
 from botocore.exceptions import ClientError
 from flask import current_app, session
+import boto3.session
+import os
 
 class SecretsManager:
-    def __init__(self, account_id=None):
-        self.account_id = account_id or session.get('current_account', 'development')
-        self.session = self._create_session()
-        self.client = self.session.client('secretsmanager')
+    def __init__(self, account_id):
+        self.account_id = account_id
+        self.account_config = current_app.config['AWS_ACCOUNTS'].get(account_id)
+        if not self.account_config:
+            raise ValueError(f"Account {account_id} not found in configuration")
 
-    def _create_session(self):
-        """Create AWS session based on environment"""
-        account_config = current_app.config['AWS_ACCOUNTS'].get(self.account_id)
-        if not account_config:
-            raise ValueError(f"Unknown AWS account: {self.account_id}")
-
-        return boto3.Session(
-            aws_access_key_id=account_config['aws_access_key_id'],
-            aws_secret_access_key=account_config['aws_secret_access_key'],
-            region_name=account_config['aws_region']
+        # Create a boto3 session with the role directly
+        session = boto3.Session()
+        self.client = boto3.client(
+            'secretsmanager',
+            region_name=self.account_config['aws_region']
         )
 
     def create_secret(self, name, secret_value, description=None):
