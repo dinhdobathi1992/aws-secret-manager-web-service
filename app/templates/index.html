@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Secrets Manager Service</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='favicon.svg') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+      }
+
+      body {
+        background-color: #f5f7fb;
+        color: #1a1f36;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .nav {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .nav a {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+      }
+
+      .nav a:hover {
+        background-color: #f3f4f6;
+      }
+
+      .user-info {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      .hero {
+        text-align: center;
+        padding: 4rem 0;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #111827;
+      }
+
+      .subtitle {
+        font-size: 1.25rem;
+        color: #6b7280;
+        margin-bottom: 2rem;
+      }
+
+      .card {
+        background-color: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+      }
+
+      .user-profile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .user-details {
+        text-align: center;
+      }
+
+      .user-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+      }
+
+      .user-email {
+        color: #6b7280;
+        margin-bottom: 1rem;
+      }
+
+      .user-groups {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+
+      .primary-button {
+        background-color: #4f46e5;
+        color: white;
+      }
+
+      .primary-button:hover {
+        background-color: #4338ca;
+      }
+
+      .secondary-button {
+        background-color: #f3f4f6;
+        color: #4b5563;
+      }
+
+      .secondary-button:hover {
+        background-color: #e5e7eb;
+      }
+
+      .login-prompt {
+        text-align: center;
+        padding: 4rem 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <nav class="nav">
+        <div class="nav-links">
+          <a href="{{ url_for('main.index') }}" class="logo-link">
+            {% include 'components/logo.html' %}
+          </a>
+          {% if session.get('user') %}
+          <a href="{{ url_for('secrets.list_secrets') }}">Secrets Manager</a>
+          {% endif %}
+        </div>
+        <div class="nav-links">
+          {% if session.get('user') %}
+          <a href="{{ url_for('auth.logout') }}">Logout</a>
+          {% else %}
+          <a href="{{ url_for('auth.login') }}">Login</a>
+          {% endif %}
+        </div>
+      </nav>
+
+      {% if session.get('user') %}
+      <div class="hero">
+        <h1>Welcome to Secrets Manager</h1>
+        <p class="subtitle">Securely manage your AWS secrets</p>
+      </div>
+
+      <div class="card">
+        <div class="user-profile">
+          <div class="avatar">{{ session['user']['name'][:1].upper() }}</div>
+          <div class="user-details">
+            <div class="user-name">{{ session['user']['name'] }}</div>
+            <div class="user-email">{{ session['user']['email'] }}</div>
+            <div class="user-groups">
+              Groups: {{ session['user']['groups']|join(', ') }}
+            </div>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <a
+            href="{{ url_for('secrets.list_secrets') }}"
+            class="button primary-button"
+          >
+            View Secrets
+          </a>
+          <a
+            href="{{ url_for('auth.logout') }}"
+            class="button secondary-button"
+          >
+            Logout
+          </a>
+        </div>
+      </div>
+      {% else %}
+      <div class="login-prompt">
+        <h1>AWS Secrets Manager</h1>
+        <p class="subtitle">Login to access your secrets</p>
+        <div class="action-buttons">
+          <a href="{{ url_for('auth.login') }}" class="button primary-button">
+            Login with Azure AD
+          </a>
+        </div>
+      </div>
+      {% endif %} {% include 'components/footer.html' %}
+    </div>
+  </body>
+</html>

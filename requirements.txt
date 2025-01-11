@@ -1,0 +1,7 @@
+Flask==2.3.3
+Werkzeug==2.3.7
+python-dotenv==1.0.0
+boto3==1.34.11
+msal==1.25.0
+flask-jwt-extended==4.6.0
+requests==2.31.0
