@@ -4,9 +4,18 @@ services:
   web:
     build: .
     ports:
-      - "5000:5000"
+      - "5001:5001"
     volumes:
       - ./.env:/config/.env
+      - ./app:/app/app # For live reload during development
     environment:
       - ENV_FILE=/config/.env
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI}
+      - AZURE_GROUP_SECRETS_READERS=${AZURE_GROUP_SECRETS_READERS}
+      - AZURE_GROUP_SECRETS_WRITERS=${AZURE_GROUP_SECRETS_WRITERS}
     restart: unless-stopped

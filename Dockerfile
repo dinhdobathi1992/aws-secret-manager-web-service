@@ -22,11 +22,13 @@ RUN mkdir /config
 
 # Set environment variables
 ENV FLASK_APP=wsgi.py
-ENV FLASK_ENV=production
+ENV FLASK_ENV=development
+ENV FLASK_DEBUG=1
 ENV PYTHONUNBUFFERED=1
+ENV PORT=5001
 
 # Expose port
-EXPOSE 5000
+EXPOSE 5001
 
 # Command to run the application
-CMD ["flask", "run", "--host=0.0.0.0"]
+CMD ["python", "wsgi.py"]
