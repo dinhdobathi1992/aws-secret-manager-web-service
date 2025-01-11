@@ -1,6 +1,86 @@
 # AWS Secrets Manager Web Service
 
-A secure web interface for managing AWS Secrets Manager with Azure AD authentication.
+A web application for managing AWS Secrets Manager across multiple AWS accounts with Azure AD authentication.
+
+## Running with Docker
+
+### Prerequisites
+
+- Docker installed
+- Docker Compose installed
+- Valid Azure AD configuration
+- AWS credentials for your accounts
+
+### Environment Setup
+
+1. Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Update the `.env` file with your credentials:
+
+- Azure AD settings
+- AWS account configurations
+- Flask settings
+
+### Running the Application
+
+1. Build and start the container:
+
+```bash
+docker-compose up --build
+```
+
+2. For running in background:
+
+```bash
+docker-compose up -d
+```
+
+3. View logs:
+
+```bash
+docker-compose logs -f
+```
+
+4. Stop the application:
+
+```bash
+docker-compose down
+```
+
+### Development with Docker
+
+The application is configured for live reload during development:
+
+- Source code changes will reflect immediately
+- Environment variables can be modified in `.env`
+- Logs are available in real-time
+
+### Troubleshooting
+
+1. If Azure AD login fails:
+
+   - Verify AZURE_TENANT_ID is correctly set
+   - Check AZURE_REDIRECT_URI matches Azure AD configuration
+   - Ensure all Azure environment variables are passed to container
+
+2. If AWS operations fail:
+
+   - Verify AWS credentials in AWS_ACCOUNTS configuration
+   - Check AWS region settings
+   - Ensure proper IAM permissions
+
+3. Common Docker issues:
+   - Port 5001 already in use: Change port mapping in docker-compose.yml
+   - Environment variables not loading: Check .env file location
+   - Container not starting: Check docker-compose logs
+
+## Local Development
+
+For running without Docker, see the [Local Development Guide](docs/local-development.md).
 
 ## Features
 
