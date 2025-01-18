@@ -270,22 +270,70 @@ app/
 
 - Images and favicon for the application
 
-
 ### Screenshot
-#### Homepage: 
+
+#### Homepage:
+
 ![image](https://github.com/user-attachments/assets/ac3e7752-78f0-49be-ba8b-3737185c19b5)
-#### Login with Azure AD 
+
+#### Login with Azure AD
+
 ![image](https://github.com/user-attachments/assets/0fb02988-d250-4c41-9539-9c6bcc6970c5)
-#### List All secrets 
+
+#### List All secrets
+
 ![image](https://github.com/user-attachments/assets/1d1553e3-6bff-4ba4-86bc-12a5743e55dd)
 ![image](https://github.com/user-attachments/assets/b7b73efe-ca62-4ea7-9c6f-d5b7b53abb44)
 
-#### View secret 
+#### View secret
+
 ![image](https://github.com/user-attachments/assets/87901961-4878-44de-bf07-4fc8e55f84da)
-#### Edit secret 
+
+#### Edit secret
+
 ![image](https://github.com/user-attachments/assets/453bf396-0013-4a5a-a432-cff0c065cf7b)
-#### Create secret 
+
+#### Create secret
+
 ![image](https://github.com/user-attachments/assets/b5e65efa-824b-4a0f-bc17-98f1cd85b9da)
 
+### AWS IAM Role Setup
 
+1. Create an IAM role in each AWS account with the following trust relationship:
 
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::YOUR_BASE_ACCOUNT_ID:root"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {}
+    }
+  ]
+}
+```
+
+2. Attach the following policy to each role:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:ListSecrets",
+        "secretsmanager:CreateSecret",
+        "secretsmanager:UpdateSecret",
+        "secretsmanager:DeleteSecret"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```

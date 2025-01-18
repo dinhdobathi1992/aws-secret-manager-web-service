@@ -1,0 +1,75 @@
+# Default values for aws-secrets-manager
+replicaCount: 1
+
+image:
+  repository: dinhdobathi/aws-secrets-manager
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: "aws-sm-service"
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>"
+    eks.amazonaws.com/sts-regional-endpoints: "true"
+
+service:
+  type: ClusterIP
+  port: 5001
+
+ingress:
+  enabled: true
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/group.name: aws-sm-service
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    alb.ingress.kubernetes.io/actions.ssl-redirect: "443"
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:<REGION>:<AWS_ACCOUNT_ID>:certificate/<CERT_ID>"
+    alb.ingress.kubernetes.io/healthcheck-path: /health/liveliness
+  className: alb
+  hosts:
+    - host: your-domain.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+env:
+  FLASK_ENV: "development"
+  FLASK_DEBUG: "1"
+  FLASK_APP: "app"
+
+secrets:
+  azure:
+    AZURE_CLIENT_ID: "<your-azure-client-id>"
+    AZURE_CLIENT_SECRET: "<your-azure-client-secret>"
+    AZURE_TENANT_ID: "<your-azure-tenant-id>"
+    AZURE_REDIRECT_URI: "https://your-domain.com/auth/callback"
+    AZURE_GROUP_SECRETS_READERS: "<your-readers-group-id>"
+    AZURE_GROUP_SECRETS_WRITERS: "<your-writers-group-id>"
+    FLASK_SECRET_KEY: "<your-flask-secret-key>"
+
+configMap:
+  AWS_ACCOUNTS: |-
+    {
+      "development": {
+        "name": "Development Account",
+        "role_arn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>",
+        "aws_region": "us-east-1",
+        "description": "Development environment"
+      },
+      "production": {
+        "name": "Production Account",
+        "role_arn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>",
+        "aws_region": "ap-southeast-1",
+        "description": "Production environment"
+      }
+    }
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
