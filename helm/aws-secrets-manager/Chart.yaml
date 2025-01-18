@@ -1,0 +1,6 @@
+apiVersion: v2
+name: aws-secrets-manager
+description: A Helm chart for AWS Secrets Manager Web Service
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
