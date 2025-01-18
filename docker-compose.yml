@@ -12,6 +12,8 @@ services:
       - ENV_FILE=/config/.env
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+      - AWS_ROLE_ARN=arn:aws:iam::457085052934:role/aws-sm-service
+      - AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
       - AZURE_TENANT_ID=${AZURE_TENANT_ID}
       - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
       - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}

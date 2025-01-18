@@ -90,9 +90,11 @@ azure.config
 *.pid.lock
 
 # Helm
+
 helm/aws-secrets-manager/values.yaml
 helm/aws-secrets-manager/values-*.yaml
 !helm/aws-secrets-manager/values.example.yaml
 !helm/aws-secrets-manager/values-dev.yaml
 !helm/aws-secrets-manager/values-prod.yaml
+
 
