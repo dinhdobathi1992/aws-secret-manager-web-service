@@ -10,7 +10,7 @@ serviceAccount:
   create: true
   name: "aws-sm-service"
   annotations:
-    eks.amazonaws.com/role-arn: "arn:aws:iam::457085052934:role/aws-sm-service"
+    eks.amazonaws.com/role-arn: "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>"
     eks.amazonaws.com/sts-regional-endpoints: "true"
 
 service:
@@ -25,11 +25,11 @@ ingress:
     alb.ingress.kubernetes.io/group.name: aws-sm-service
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
     alb.ingress.kubernetes.io/actions.ssl-redirect: "443"
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-southeast-1:457085052934:certificate/aece225c-4f23-41f4-be46-56e22166362c
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:<REGION>:<AWS_ACCOUNT_ID>:certificate/<CERT_ID>"
     alb.ingress.kubernetes.io/healthcheck-path: /health/liveliness
   className: alb
   hosts:
-    - host: sm.ddbt.info
+    - host: your-domain.com
       paths:
         - path: /
           pathType: Prefix
@@ -41,40 +41,28 @@ env:
 
 secrets:
   azure:
-    AZURE_CLIENT_ID: "01d87284-0804-40df-ad29-ae88587f9607"
-    AZURE_CLIENT_SECRET: "wBM8Q~64.TZoDBN6Esdl3KbmrFPA6HBagCMmlbgC"
-    AZURE_TENANT_ID: "23131c9d-5769-486a-851b-18c604ca85cf"
-    AZURE_REDIRECT_URI: "https://sm.ddbt.info/auth/callback"
-    AZURE_GROUP_SECRETS_READERS: "27325b00-5696-404c-a09e-1c0929cca11b"
-    AZURE_GROUP_SECRETS_WRITERS: "da48e02c-94ad-425e-9392-786406505343"
-    FLASK_SECRET_KEY: "dinhd0b@thi"
+    AZURE_CLIENT_ID: "<your-azure-client-id>"
+    AZURE_CLIENT_SECRET: "<your-azure-client-secret>"
+    AZURE_TENANT_ID: "<your-azure-tenant-id>"
+    AZURE_REDIRECT_URI: "https://your-domain.com/auth/callback"
+    AZURE_GROUP_SECRETS_READERS: "<your-readers-group-id>"
+    AZURE_GROUP_SECRETS_WRITERS: "<your-writers-group-id>"
+    FLASK_SECRET_KEY: "<your-flask-secret-key>"
 
 configMap:
   AWS_ACCOUNTS: |-
     {
       "development": {
         "name": "Development Account",
-        "role_arn": "arn:aws:iam::457085052934:role/aws-sm-service",
+        "role_arn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>",
         "aws_region": "us-east-1",
         "description": "Development environment"
       },
       "production": {
-        "name": "Production Account2",
-        "role_arn": "arn:aws:iam::457085052934:role/aws-sm-service",
+        "name": "Production Account",
+        "role_arn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>",
         "aws_region": "ap-southeast-1",
         "description": "Production environment"
-      },
-      "staging": {
-        "name": "Staging Account",
-        "role_arn": "arn:aws:iam::457085052934:role/aws-sm-service",
-        "aws_region": "ap-southeast-1",
-        "description": "Staging environment"
-      },
-      "pre-prod": {
-        "name": "Pre-Production Account",
-        "role_arn": "arn:aws:iam::457085052934:role/aws-sm-service",
-        "aws_region": "ap-southeast-1",
-        "description": "Pre-Production environment"
       }
     }
 

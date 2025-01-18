@@ -1,5 +1,5 @@
-# Use Python 3.8 slim image
-FROM python:3.8-slim
+# Use Python 3.8 slim image with platform specification
+FROM --platform=linux/amd64 python:3.8-slim
 
 # Set working directory
 WORKDIR /app

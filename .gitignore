@@ -88,3 +88,8 @@ azure.config
 *.pid
 *.seed
 *.pid.lock
+
+# Helm
+helm/**/values.yaml
+helm/**/values-*.yaml
+!helm/**/values.example.yaml
