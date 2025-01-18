@@ -42,7 +42,7 @@ env:
 secrets:
   azure:
     AZURE_CLIENT_ID: "01d87284-0804-40df-ad29-ae88587f9607"
-    AZURE_CLIENT_SECRET: "wBM8Q~64.TZoDBN6Esdl3KbmrFPA6HBagCMmlbgC"
+    AZURE_CLIENT_SECRET: "change-me"
     AZURE_TENANT_ID: "23131c9d-5769-486a-851b-18c604ca85cf"
     AZURE_REDIRECT_URI: "https://sm.ddbt.info/auth/callback"
     AZURE_GROUP_SECRETS_READERS: "27325b00-5696-404c-a09e-1c0929cca11b"
