@@ -1,0 +1,5 @@
+# Lifecycle scripts stay blocked by default; only the listed packages may run install scripts.
+onlyBuiltDependencies:
+  - sharp
+  - unrs-resolver
+  - esbuild
