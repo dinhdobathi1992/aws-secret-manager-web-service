@@ -5,7 +5,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-IMAGE="${IMAGE:-aws-secrets-console:$(node -p "require('./package.json').version")}"
+IMAGE="${IMAGE:-dinhdobathi/aws-secrets-manager:$(node -p "require('./package.json').version")}"  # build.sh default
+
+# Refuse to smoke-test an image built before the current commit (it would not contain HEAD).
+created=$(docker image inspect "$IMAGE" --format '{{.Created}}' 2>/dev/null || true)
+[ -n "$created" ] || { echo "FAIL: image $IMAGE not found; run scripts/build.sh first"; exit 1; }
+if [ "$(node -e "process.stdout.write(String(Date.parse(process.argv[1]) >= Number(process.argv[2])*1000))" "$created" "$(git log -1 --format=%ct)")" != true ]; then
+  echo "FAIL: $IMAGE was built before the current commit; run scripts/build.sh first"; exit 1
+fi
 NET=sc-smoke
 MOTO=sc-smoke-moto
 MOTO_IMAGE="${MOTO_IMAGE:-motoserver/moto:5.2.2}"

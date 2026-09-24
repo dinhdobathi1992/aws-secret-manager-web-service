@@ -7,6 +7,7 @@ import {
   login,
   PLANTED,
   secretPath,
+  grepDir,
   serverLog,
   test,
 } from './fixtures'
@@ -229,7 +230,61 @@ test.describe('reader limits', () => {
   })
 })
 
-test('the planted secret value never appears in server output', async () => {
-  // Runs last (serial, single worker): every scenario above has already exercised the value.
-  expect(serverLog()).not.toContain(PLANTED)
+test.describe('value safety', () => {
+  test('dev persona login is dead in production even with DEV_AUTH=1', async ({ request }) => {
+    const res = await request.post('/api/auth/dev', { form: { 'role:dev-mock': 'admin' } })
+    expect(res.status()).toBe(404)
+  })
+
+  test('a plain-text (non-JSON) value survives reveal, versions, update, rollback and delete', async ({
+    page,
+    context,
+  }) => {
+    const name = await arrangeSecret(PLANTED, [`${PLANTED}-v2`])
+    await login(context, ADMIN, 'plain')
+    await page.goto(secretPath(name))
+    await page.getByRole('button', { name: 'Reveal values' }).click()
+    const value = page.getByLabel('Secret value', { exact: true })
+    await expect(value).toHaveValue(`${PLANTED}-v2`)
+    await value.fill(`${PLANTED}-v3`)
+    await page.getByRole('button', { name: 'Save new version' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Save version' }).click()
+    await expect(page.getByText('Saved a new version.')).toBeVisible()
+
+    await page.goto(secretPath(name, 'versions'))
+    const previous = page.getByRole('row').filter({ hasText: 'AWSPREVIOUS' })
+    await previous.getByRole('button', { name: 'Reveal' }).click()
+    await expect(page.getByLabel('Version value')).toHaveValue(`${PLANTED}-v2`)
+    await page.keyboard.press('Escape')
+    await previous.getByRole('button', { name: 'Compare keys' }).click()
+    await expect(page.getByText(/Compare .* current/)).toBeVisible()
+    await previous.getByRole('button', { name: 'Make current' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Make current' }).click()
+    await expect(page.getByText(/is now current/)).toBeVisible()
+
+    await page.goto(secretPath(name, 'danger'))
+    await page.getByLabel(/to confirm/).fill(name)
+    await page.getByRole('button', { name: 'Schedule deletion' }).click()
+    await expect(page).toHaveURL(/\/deleted$/)
+  })
+
+  test('unsaved edits pause auto-hide, even a half-typed row', async ({ page, context }) => {
+    const name = await arrangeSecret({ k: 'v' })
+    await login(context, WRITER)
+    await page.clock.install()
+    await page.goto(secretPath(name))
+    await page.getByRole('button', { name: 'Reveal values' }).click()
+    await page.getByRole('button', { name: 'Add key' }).click() // blank key: not yet a valid draft
+    await page.clock.fastForward(31_000)
+    await expect(page.getByLabel('Value for k', { exact: true })).toBeVisible()
+    await expect(page.getByText('Auto-hide paused while you have unsaved changes')).toBeVisible()
+  })
+
+  test('no planted or seeded value in server output or build output', async () => {
+    // Runs last (serial, single worker): every scenario above has already exercised the values.
+    const log = serverLog()
+    for (const v of [PLANTED, 'fake-pass-']) expect(log).not.toContain(v)
+    const hits = grepDir('.next', [PLANTED, 'fake-pass-'])
+    expect(hits).toEqual([])
+  })
 })

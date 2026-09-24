@@ -33,7 +33,11 @@ async function callAction(base: string, origin: string) {
     body: JSON.stringify([{ accountId: 'dev-mock', name: 'team/app/db' }]),
   })
   const text = await res.text()
-  return { status: res.status, ok: text.includes('"ok":true') && text.includes('"kind":"string"') }
+  return {
+    status: res.status,
+    ok: text.includes('"ok":true') && text.includes('"kind":"string"'),
+    body: text,
+  }
 }
 
 let failed = false
@@ -41,7 +45,7 @@ for (const base of bases) {
   const same = await callAction(base, new URL(base).origin)
   const cross = await callAction(base, 'https://evil.example.com')
   // Next rejects a mismatched Origin before running the action (500, no result payload).
-  const pass = same.status === 200 && same.ok && cross.status === 500 && !cross.ok
+  const pass = same.status === 200 && same.ok && cross.status === 500 && !cross.ok && !cross.body.includes('"kind"')
   failed ||= !pass
   console.log(
     `${pass ? 'PASS' : 'FAIL'} ${base}: same-origin action status=${same.status} ok=${same.ok}; cross-origin rejected=${!cross.ok} (status=${cross.status})`,

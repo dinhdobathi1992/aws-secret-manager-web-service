@@ -37,13 +37,6 @@ export function matchesText(e: ActivityEvent, user?: string, secret?: string): b
   return true
 }
 
-export type ActivityFilter = { type: string; user?: string; secret?: string }
-
-export function filterActivity(events: ActivityEvent[], f: ActivityFilter): ActivityEvent[] {
-  const type = parseActivityType(f.type)
-  return events.filter((e) => matchesType(e, type) && matchesText(e, f.user, f.secret))
-}
-
 const DAY_MS = 86_400_000
 
 /**

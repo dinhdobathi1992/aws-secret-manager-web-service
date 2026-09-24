@@ -106,7 +106,3 @@ export function getConfig(): Config {
   cached ??= loadConfig()
   return cached
 }
-
-export function getAccount(id: string): Account | undefined {
-  return getConfig().ACCOUNTS.find((a) => a.id === id)
-}

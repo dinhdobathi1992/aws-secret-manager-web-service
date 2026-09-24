@@ -111,7 +111,9 @@ export function ValuePanel({
     serialize(draft) !== serialize(revealed.original)
 
   // Auto-mask after 30s and when the page is hidden; paused only while the user has real edits.
-  useAutoHide(!!revealed && !dirty, hide)
+  // `edited` (not `dirty`): a half-typed row with a blank key isn't a valid draft yet, but it is
+  // still work the user would lose.
+  useAutoHide(!!revealed && !(canEdit && edited), hide)
 
   const reveal = () =>
     startTransition(async () => {
@@ -247,7 +249,7 @@ export function ValuePanel({
         <div className="flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
             <ClockIcon className="size-3.5" />
-            {dirty
+            {canEdit && edited
               ? 'Auto-hide paused while you have unsaved changes'
               : 'Hides in 30s or when you leave the tab'}
           </span>

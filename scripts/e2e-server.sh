@@ -12,6 +12,11 @@ LOG=e2e/.server.log
 if [ "${E2E_SKIP_BUILD:-0}" != 1 ]; then
   pnpm build >/dev/null
 fi
+# The dev persona login must be compiled out of production builds.
+if grep -rlq DEV_PERSONA_LOGIN .next/standalone .next/server; then
+  echo "FAIL: dev persona login code found in the production build" >&2
+  exit 1
+fi
 # Standalone output does not include static assets; copy them next to server.js.
 rm -rf .next/standalone/.next/static .next/standalone/public
 cp -r .next/static .next/standalone/.next/static
@@ -25,6 +30,6 @@ exec scripts/with-moto.sh bash -c '
   SESSION_SECRET=e2e-session-secret-0123456789abcdef-not-for-production \
   ENTRA_TENANT_ID=00000000-0000-0000-0000-000000000000 \
   ENTRA_CLIENT_ID=e2e ENTRA_CLIENT_SECRET=e2e \
-  NODE_ENV=production PORT="$E2E_PORT" HOSTNAME=127.0.0.1 \
+  NODE_ENV=production DEV_AUTH=1 PORT="$E2E_PORT" HOSTNAME=127.0.0.1 \
   node .next/standalone/server.js >> e2e/.server.log 2>&1
 '

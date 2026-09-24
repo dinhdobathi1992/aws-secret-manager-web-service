@@ -3,7 +3,7 @@
 # account's roleArn. For SSO profiles run `aws sso login` first.
 services:
   web:
-    image: ${IMAGE:-aws-secrets-console:local}
+    image: ${IMAGE:-dinhdobathi/aws-secrets-manager:2.0.0}
     build: .
     # The container must be able to read ~/.aws. On Linux, run as your own uid/gid:
     #   APP_UID=$(id -u) APP_GID=$(id -g) docker compose up

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { ActivityEvent } from '@/lib/aws/activity'
-import { activityWindow, filterActivity, parseActivityType } from './activity-options'
+import { activityWindow, matchesText, matchesType, parseActivityType } from './activity-options'
+
+const filterActivity = (
+  events: ActivityEvent[],
+  f: { type: string; user?: string; secret?: string },
+) =>
+  events.filter(
+    (e) => matchesType(e, parseActivityType(f.type)) && matchesText(e, f.user, f.secret),
+  )
 
 const ev = (over: Partial<ActivityEvent>): ActivityEvent => ({
   id: Math.random().toString(),

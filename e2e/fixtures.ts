@@ -6,7 +6,8 @@ import {
 } from '@aws-sdk/client-secrets-manager'
 import { fromTemporaryCredentials } from '@aws-sdk/credential-providers'
 import { sealData } from 'iron-session'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 
 export const SESSION_SECRET = 'e2e-session-secret-0123456789abcdef-not-for-production'
@@ -104,3 +105,22 @@ export async function hidePage(page: Page) {
 
 export const test = base
 export { expect }
+
+/** Files under `dir` (skipping node_modules and the dev cache) that contain any needle. */
+export function grepDir(dir: string, needles: string[]): string[] {
+  const hits: string[] = []
+  const walk = (d: string) => {
+    for (const name of readdirSync(d)) {
+      if (name === 'node_modules' || name === 'cache' || name === 'dev') continue
+      const p = join(d, name)
+      const st = statSync(p)
+      if (st.isDirectory()) walk(p)
+      else if (st.size < 5_000_000) {
+        const text = readFileSync(p, 'latin1')
+        if (needles.some((n) => text.includes(n))) hits.push(p)
+      }
+    }
+  }
+  walk(dir)
+  return hits
+}

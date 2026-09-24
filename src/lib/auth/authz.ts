@@ -36,12 +36,6 @@ export function authorize(
   return { user, account, role }
 }
 
-export async function requireSession(): Promise<SessionUser> {
-  const user = await readSession()
-  if (!user) throw new AuthzError('Unauthenticated')
-  return user
-}
-
 /** Server-side authorization for actions. Throws AuthzError. */
 export async function requireRole(accountId: string, action: Action): Promise<Authorized> {
   return authorize(await readSession(), accountId, action, getConfig().ACCOUNTS)

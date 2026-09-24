@@ -53,6 +53,10 @@ pnpm install
 | Production image      | `scripts/build.sh`, then `docker run --env-file .env -e AWS_PROFILE=<p> -v ~/.aws:/home/nextjs/.aws:ro -p 3000:3000 dinhdobathi/aws-secrets-manager:2.0.0` | As above                                                                                                                                    |
 | Compose               | `AWS_PROFILE=<p> docker compose up`                                                                                                                        | As above. On Linux add `APP_UID=$(id -u) APP_GID=$(id -g)`                                                                                  |
 
+On Linux, `~/.aws` files belong to your user, so the container must run as you: add
+`--user $(id -u):$(id -g) --tmpfs /app/.next/cache:mode=1777` to `docker run`, or set
+`APP_UID`/`APP_GID` for compose.
+
 `.env` rules: **no quotes around values** (`docker run --env-file` keeps them literally), and
 **no `$`** (compose expands it). Generate the session secret with `openssl rand -hex 32`.
 
@@ -83,6 +87,10 @@ failing field, e.g. `ACCOUNTS[prod].groups.admin`.
 | `scripts/build.sh`             | Builds the image locally. `PUSH=1` builds amd64+arm64 and pushes (explicit, separate decision)            |
 
 Full gate: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm test:e2e && pnpm audit --prod --audit-level=high && scripts/build.sh && scripts/image-smoke.sh && helm lint helm/aws-secrets-manager`
+
+## Design
+
+UI/UX contract (tokens, screens, role visibility, behaviour rules): `docs/design-contract.md`.
 
 ## Deploy
 
