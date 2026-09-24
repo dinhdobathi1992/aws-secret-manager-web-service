@@ -38,3 +38,6 @@ Thumbs.db
 .vscode/
 .idea/
 .vercel
+
+# e2e server output
+/e2e/.server.log
