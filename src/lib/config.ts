@@ -36,7 +36,8 @@ const envSchema = z.object({
   ACCOUNTS: accountsSchema,
   APP_URL: z.url({ protocol: /^https?$/ }),
   SESSION_SECRET: z.string().min(32, 'must be at least 32 characters'),
-  ENTRA_TENANT_ID: z.string().min(1),
+  // A GUID: multi-tenant aliases (common/organizations) fail OIDC issuer validation.
+  ENTRA_TENANT_ID: z.guid(),
   ENTRA_CLIENT_ID: z.string().min(1),
   ENTRA_CLIENT_SECRET: z.string().min(1),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),

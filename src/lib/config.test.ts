@@ -20,7 +20,7 @@ const baseEnv = (accounts: unknown[] = [account('dev'), account('prod')]) => ({
   ACCOUNTS: JSON.stringify(accounts),
   APP_URL: 'http://localhost:3000',
   SESSION_SECRET: SECRET,
-  ENTRA_TENANT_ID: 'tenant',
+  ENTRA_TENANT_ID: '00000000-0000-0000-0000-00000000aaaa',
   ENTRA_CLIENT_ID: 'client',
   ENTRA_CLIENT_SECRET: 'client-secret',
 })

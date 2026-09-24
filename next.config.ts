@@ -6,6 +6,8 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
+  // Enables forbidden() and the app/forbidden.tsx 403 page.
+  experimental: { authInterrupts: true },
   async headers() {
     return [
       {
