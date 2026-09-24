@@ -3,8 +3,11 @@ import { z } from 'zod'
 // Entra object ids are GUIDs; z.guid() accepts any 8-4-4-4-12 hex id without enforcing an RFC version.
 const groupId = z.guid()
 
+/** Account ids appear in URLs and audit lines; one rule shared with action validation. */
+export const ACCOUNT_ID_RE = /^[a-z0-9-]{1,64}$/
+
 const accountSchema = z.object({
-  id: z.string().regex(/^[a-z0-9-]+$/, 'must be lowercase letters, digits or dashes'),
+  id: z.string().regex(ACCOUNT_ID_RE, 'must be 1-64 lowercase letters, digits or dashes'),
   name: z.string().min(1),
   region: z.string().regex(/^[a-z]{2}(-[a-z]+)+-\d$/, 'must be an AWS region like ap-southeast-1'),
   // Required everywhere, including local: the app always acts through AssumeRole.
