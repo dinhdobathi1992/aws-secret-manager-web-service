@@ -37,9 +37,16 @@ export async function GET(request: NextRequest) {
   try {
     const claims = await completeLogin(request.nextUrl.search, loginState)
     const user = sessionFromClaims(claims, cfg.ACCOUNTS)
+    // Count only (no ids): tells "token has no groups claim" apart from "ids don't match config".
+    const groupCount = Array.isArray(claims.groups) ? claims.groups.length : 0
     await writeSession(user)
     logger.info(
-      { event: 'login', user: { oid: user.oid, upn: user.upn }, accounts: Object.keys(user.roles) },
+      {
+        event: 'login',
+        user: { oid: user.oid, upn: user.upn },
+        accounts: Object.keys(user.roles),
+        groupCount,
+      },
       'login',
     )
     return NextResponse.redirect(new URL(loginState.returnTo, cfg.APP_URL), 303)
