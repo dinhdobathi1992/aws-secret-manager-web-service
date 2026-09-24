@@ -60,3 +60,14 @@ export async function rollbackSecret(input: unknown) {
     sm.rollbackSecret(client, input.name, input.targetVersionId, input.expectedCurrentVersionId),
   )
 }
+
+/** Version list + current version for the rollback dialog (re-fetched when it opens). */
+export async function getVersions(input: unknown) {
+  return withAction('view', schemas.reveal, input, async ({ input, client }) => {
+    const [meta, versions] = await Promise.all([
+      sm.describeSecret(client, input.name),
+      sm.listVersions(client, input.name),
+    ])
+    return { currentVersionId: meta.currentVersionId, versions }
+  })
+}

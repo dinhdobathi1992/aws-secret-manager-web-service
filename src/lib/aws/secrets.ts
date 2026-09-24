@@ -30,6 +30,11 @@ export type SecretSummary = {
   tags: Tags
   lastChangedDate?: string
   createdDate?: string
+  /**
+   * For secrets scheduled for deletion: when deletion was REQUESTED (verified on real AWS
+   * 2026-09-25; moto instead returns the permanent-deletion date). The permanent date is this
+   * plus the recovery window, which only the DeleteSecret response reports.
+   */
   deletedDate?: string
 }
 
@@ -238,7 +243,12 @@ export async function listVersions(
     }
     token = out.NextToken
   } while (token)
-  return versions.sort((a, b) => (b.createdDate ?? '').localeCompare(a.createdDate ?? ''))
+  // Current first, then previous, then newest; timestamps alone can tie.
+  const rank = (v: SecretVersion) =>
+    v.stages.includes(CURRENT) ? 0 : v.stages.includes('AWSPREVIOUS') ? 1 : 2
+  return versions.sort(
+    (a, b) => rank(a) - rank(b) || (b.createdDate ?? '').localeCompare(a.createdDate ?? ''),
+  )
 }
 
 /**

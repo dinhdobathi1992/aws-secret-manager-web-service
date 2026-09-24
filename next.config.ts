@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Enables forbidden() and the app/forbidden.tsx 403 page.
   experimental: { authInterrupts: true },
+  // `next dev` prints every server action's arguments by default, which would include secret
+  // values passed to updateSecretValue/createSecret. Never re-enable.
+  logging: { serverFunctions: false },
   async headers() {
     return [
       {

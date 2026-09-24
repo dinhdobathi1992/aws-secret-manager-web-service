@@ -51,6 +51,8 @@ export function proxy(request: NextRequest) {
 
   const headers = new Headers(request.headers)
   headers.set('x-nonce', nonce)
+  // For login redirects from server components (always overwritten; sanitized by safeReturnTo).
+  headers.set('x-pathname', `${pathname}${search}`)
   headers.set('Content-Security-Policy', csp)
   const res = NextResponse.next({ request: { headers } })
   res.headers.set('Content-Security-Policy', csp)

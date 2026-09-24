@@ -3,6 +3,7 @@ import {
   DeleteSecretCommand,
   DescribeSecretCommand,
   GetSecretValueCommand,
+  ListSecretVersionIdsCommand,
   PutSecretValueCommand,
   RestoreSecretCommand,
   SecretsManagerClient,
@@ -76,6 +77,7 @@ const CASES: Record<string, Case> = {
   },
   deleteSecret: { fn: actions.deleteSecret, action: 'delete', min: 'admin', input: target },
   restoreSecret: { fn: actions.restoreSecret, action: 'restore', min: 'admin', input: target },
+  getVersions: { fn: actions.getVersions, action: 'view', min: 'reader', input: target },
   rollbackSecret: {
     fn: actions.rollbackSecret,
     action: 'rollback',
@@ -130,6 +132,9 @@ function happyAws() {
   sm.on(DeleteSecretCommand).resolves({})
   sm.on(RestoreSecretCommand).resolves({})
   sm.on(UpdateSecretVersionStageCommand).resolves({})
+  sm.on(ListSecretVersionIdsCommand).resolves({
+    Versions: [{ VersionId: V1, VersionStages: ['AWSCURRENT'] }],
+  })
 }
 
 beforeEach(() => {
