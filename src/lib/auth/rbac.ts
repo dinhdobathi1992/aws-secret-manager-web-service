@@ -4,7 +4,16 @@ export const ROLES = ['reader', 'writer', 'admin'] as const
 export type Role = (typeof ROLES)[number]
 
 export type Action =
-  'list' | 'view' | 'reveal' | 'create' | 'update' | 'tag' | 'delete' | 'restore' | 'rollback'
+  | 'list'
+  | 'view'
+  | 'reveal'
+  | 'create'
+  | 'update'
+  | 'tag'
+  | 'delete'
+  | 'restore'
+  | 'rollback'
+  | 'activity'
 
 /**
  * Single source of truth for the role matrix in the plan. can(), requireRole() and the
@@ -20,6 +29,8 @@ export const ACTION_MIN_ROLE: Record<Action, Role> = {
   delete: 'admin',
   restore: 'admin',
   rollback: 'admin',
+  // Admin-only CloudTrail activity page for the account.
+  activity: 'admin',
 }
 
 const RANK: Record<Role, number> = { reader: 1, writer: 2, admin: 3 }

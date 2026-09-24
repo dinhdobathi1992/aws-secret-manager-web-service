@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@aws-sdk/client-cloudtrail':
+        specifier: 3.1139.0
+        version: 3.1139.0
       '@aws-sdk/client-secrets-manager':
         specifier: 3.1139.0
         version: 3.1139.0
@@ -111,6 +114,10 @@ packages:
   '@alloc/quick-lru@5.3.0':
     resolution: {integrity: sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA==}
     engines: {node: '>=10'}
+
+  '@aws-sdk/client-cloudtrail@3.1139.0':
+    resolution: {integrity: sha512-7hu42u4weo+Fq1yp6/73Pw+Re5etz3rBh7DNHz6VXRgQRbrAd7DscdmufWmdbr5hVidhT0EV6Oxqfe63iN3e5A==}
+    engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-secrets-manager@3.1139.0':
     resolution: {integrity: sha512-Frr5NTgCVRsTAdBqRZnbS/OGgxjAc/ii9ZhWuBBAQw9cIkZv1SK9SYyadijoJhBgL1iSm30gRT5+rQCklQutpQ==}
@@ -4471,6 +4478,17 @@ packages:
 snapshots:
 
   '@alloc/quick-lru@5.3.0': {}
+
+  '@aws-sdk/client-cloudtrail@3.1139.0':
+    dependencies:
+      '@aws-sdk/core': 3.978.1
+      '@aws-sdk/credential-provider-node': 3.972.84
+      '@aws-sdk/types': 3.974.6
+      '@smithy/core': 3.35.0
+      '@smithy/fetch-http-handler': 5.8.0
+      '@smithy/node-http-handler': 4.12.1
+      '@smithy/types': 4.19.0
+      tslib: 2.8.1
 
   '@aws-sdk/client-secrets-manager@3.1139.0':
     dependencies:

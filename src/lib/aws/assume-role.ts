@@ -1,4 +1,5 @@
 import 'server-only'
+import { CloudTrailClient } from '@aws-sdk/client-cloudtrail'
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager'
 import { createHash } from 'node:crypto'
 import { fromNodeProviderChain, fromTemporaryCredentials } from '@aws-sdk/credential-providers'
@@ -45,14 +46,15 @@ const IDLE_TTL_MS = 60 * 60 * 1000
 let baseIdentity: ReturnType<typeof fromNodeProviderChain> | undefined
 const base = () => (baseIdentity ??= fromNodeProviderChain())
 
-const clients = new Map<string, { client: SecretsManagerClient; lastUsed: number }>()
+type Entry = { client: SecretsManagerClient; cloudTrail?: CloudTrailClient; lastUsed: number }
+const clients = new Map<string, Entry>()
 
 /**
  * One Secrets Manager client per (account, user, tier). Different users never share a client or
  * assumed-role session. The SDK refreshes those temporary keys before they expire. The base
  * identity is the default chain: IRSA in EKS, a profile or env locally.
  */
-export function secretsClientFor(scope: CredentialScope): SecretsManagerClient {
+function entryFor(scope: CredentialScope): Entry {
   const key = `${scope.account.id}|${scope.user.oid}|${scope.role}`
   const now = Date.now()
   const hit = clients.get(key)
@@ -61,7 +63,7 @@ export function secretsClientFor(scope: CredentialScope): SecretsManagerClient {
     clients.delete(key)
     hit.lastUsed = now
     clients.set(key, hit)
-    return hit.client
+    return hit
   }
   // Expired or evicted clients are dropped, not destroyed: destroy() would abort requests
   // another caller may still have in flight. GC reclaims them.
@@ -76,11 +78,29 @@ export function secretsClientFor(scope: CredentialScope): SecretsManagerClient {
       clientConfig: { region },
     }),
   })
-  clients.set(key, { client, lastUsed: now })
+  const entry: Entry = { client, lastUsed: now }
+  clients.set(key, entry)
   while (clients.size > MAX_CLIENTS) {
     clients.delete(clients.keys().next().value as string)
   }
-  return client
+  return entry
+}
+
+export function secretsClientFor(scope: CredentialScope): SecretsManagerClient {
+  return entryFor(scope).client
+}
+
+/**
+ * CloudTrail client for the same (account, user, tier). It reuses the Secrets Manager client's
+ * assumed-role credential provider, so both share one session (and one SourceIdentity).
+ */
+export function cloudTrailClientFor(scope: CredentialScope): CloudTrailClient {
+  const entry = entryFor(scope)
+  entry.cloudTrail ??= new CloudTrailClient({
+    region: scope.account.region,
+    credentials: entry.client.config.credentials,
+  })
+  return entry.cloudTrail
 }
 
 /** Test hook. */

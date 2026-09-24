@@ -1,5 +1,6 @@
 import { AppShell } from '@/components/app-shell'
 import { listDeleted } from '@/lib/aws/secrets'
+import { can } from '@/lib/auth/rbac'
 import { getConfig } from '@/lib/config'
 import { accountOptions, pageContext } from '@/lib/data/page-data'
 
@@ -28,6 +29,7 @@ export default async function AccountLayout({
       currentId={auth.account.id}
       user={{ name: auth.user.name, upn: auth.user.upn }}
       deletedCount={deletedCount}
+      showActivity={can(auth.role, 'activity')}
     >
       {children}
     </AppShell>

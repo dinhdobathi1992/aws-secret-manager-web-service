@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
         event: 'login',
         user: { oid: user.oid, upn: user.upn },
         accounts: Object.keys(user.roles),
+        // Resolved tier per account (e.g. { dev: 'writer' }); group ids are never logged.
+        roles: user.roles,
         groupCount,
       },
       'login',

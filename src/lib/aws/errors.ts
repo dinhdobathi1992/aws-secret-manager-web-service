@@ -5,6 +5,7 @@ export type DomainErrorCode =
   | 'InvalidRequest'
   | 'Conflict'
   | 'CredentialsExpired'
+  | 'Throttled'
   | 'Unavailable'
 
 /** Fixed, value-free messages. Never built from AWS error text, which can echo input. */
@@ -16,6 +17,7 @@ export const DOMAIN_MESSAGES: Record<DomainErrorCode, string> = {
   Conflict: 'The secret changed since you loaded it. Reload and try again.',
   CredentialsExpired:
     'AWS credentials expired. Run `aws sso login` (or refresh the base identity).',
+  Throttled: 'AWS is rate-limiting these requests. Wait a few seconds and try again.',
   Unavailable: 'AWS is unavailable. Try again shortly.',
 }
 
@@ -53,6 +55,9 @@ const BY_NAME = new Map<string, DomainErrorCode>(
     IDPRejectedClaimException: 'CredentialsExpired',
     IDPCommunicationErrorException: 'Unavailable',
     InvalidNextTokenException: 'InvalidRequest',
+    ThrottlingException: 'Throttled',
+    TooManyRequestsException: 'Throttled',
+    Throttling: 'Throttled',
     PackedPolicyTooLargeException: 'InvalidRequest',
     PreconditionNotMetException: 'InvalidRequest',
     // KMS failures behind Secrets Manager: the role can't use the secret's key

@@ -10,7 +10,11 @@ const nextConfig: NextConfig = {
   experimental: { authInterrupts: true },
   // `next dev` prints every server action's arguments by default, which would include secret
   // values passed to updateSecretValue/createSecret. Never re-enable.
-  logging: { serverFunctions: false },
+  logging: {
+    serverFunctions: false,
+    // Don't print the OIDC callback URL (it carries the one-time authorization code).
+    incomingRequests: { ignore: [/\/api\/auth\/callback/] },
+  },
   async headers() {
     return [
       {

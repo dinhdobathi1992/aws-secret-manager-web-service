@@ -12,6 +12,8 @@ const ACTION_API: Record<Action, string[]> = {
   delete: ['secretsmanager:DeleteSecret'],
   restore: ['secretsmanager:RestoreSecret'],
   rollback: ['secretsmanager:UpdateSecretVersionStage'],
+  // LookupEvents has no resource-level permissions; the target role must allow it too.
+  activity: ['cloudtrail:LookupEvents'],
 }
 
 function kmsActions(role: Role): string[] {

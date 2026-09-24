@@ -1,4 +1,4 @@
-import { ClockIcon, KeyRoundIcon } from 'lucide-react'
+import { ActivityIcon, ClockIcon, KeyRoundIcon } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ export function AppShell({
   currentId,
   user,
   deletedCount,
+  showActivity,
   children,
 }: {
   appName: string
@@ -22,6 +23,8 @@ export function AppShell({
   currentId: string
   user: { name: string; upn: string }
   deletedCount: Promise<number | null>
+  /** Admins of the current account only. */
+  showActivity: boolean
   children: React.ReactNode
 }) {
   const base = `/a/${encodeURIComponent(currentId)}`
@@ -42,6 +45,14 @@ export function AppShell({
         <span className="h-6 w-px bg-border" />
         <AccountSwitcher accounts={accounts} currentId={currentId} />
         <div className="flex-1" />
+        {showActivity && (
+          <Button variant="ghost" asChild className="h-9 gap-2">
+            <Link href={`${base}/activity`}>
+              <ActivityIcon />
+              Activity
+            </Link>
+          </Button>
+        )}
         <Button variant="ghost" asChild className="h-9 gap-2">
           <Link href={`${base}/deleted`}>
             <ClockIcon />

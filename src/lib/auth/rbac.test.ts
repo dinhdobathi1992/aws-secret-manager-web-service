@@ -17,6 +17,7 @@ const MATRIX: Record<Action, Role[]> = {
   delete: ['admin'],
   restore: ['admin'],
   rollback: ['admin'],
+  activity: ['admin'],
 }
 
 const user = (roles: Record<string, Role>): SessionUser => ({
