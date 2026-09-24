@@ -1,0 +1,25 @@
+# Local single-container run of the production image.
+# Base AWS identity: your ~/.aws (read-only) with AWS_PROFILE; the app then assumes each
+# account's roleArn. For SSO profiles run `aws sso login` first.
+services:
+  web:
+    image: ${IMAGE:-aws-secrets-console:local}
+    build: .
+    # The container must be able to read ~/.aws. On Linux, run as your own uid/gid:
+    #   APP_UID=$(id -u) APP_GID=$(id -g) docker compose up
+    user: "${APP_UID:-1001}:${APP_GID:-1001}"
+    env_file: .env
+    environment:
+      AWS_PROFILE: ${AWS_PROFILE:-}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ${HOME}/.aws:/home/nextjs/.aws:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

@@ -1,0 +1,92 @@
+# Safe defaults: the chart installs as-is, and the pod stays NotReady (readiness 503, with the
+# failing fields logged) until `app.url`, `accounts` and the auth Secret are provided.
+# See values.example.yaml for a filled-in example.
+
+replicaCount: 1
+
+image:
+  repository: dinhdobathi/aws-secrets-manager
+  tag: "" # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  # IRSA: eks.amazonaws.com/role-arn: arn:aws:iam::<HUB_ACCOUNT_ID>:role/<HUB_ROLE>
+  annotations: {}
+
+app:
+  # Public URL, e.g. https://secrets.example.com. OIDC redirect: <url>/api/auth/callback
+  url: ""
+  name: "Secrets Console"
+  logoUrl: ""
+  logLevel: info
+
+# One entry per AWS account; roleArn and all three Entra group ids are required.
+# Quote ids that look like numbers (id: "123"): the app expects strings.
+accounts: []
+#  - id: dev
+#    name: Development
+#    region: ap-southeast-1
+#    roleArn: arn:aws:iam::123456789012:role/secrets-console
+#    groups:
+#      reader: 00000000-0000-0000-0000-000000000001
+#      writer: 00000000-0000-0000-0000-000000000002
+#      admin: 00000000-0000-0000-0000-000000000003
+
+auth:
+  # Recommended: an existing Secret (ESO / manual) with keys SESSION_SECRET, ENTRA_TENANT_ID,
+  # ENTRA_CLIENT_ID, ENTRA_CLIENT_SECRET. When set, the values below are ignored.
+  existingSecret: ""
+  sessionSecret: ""
+  tenantId: ""
+  clientId: ""
+  clientSecret: ""
+
+# Extra env vars (e.g. AWS_REGION when not injected by IRSA).
+extraEnv: []
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+  hosts: []
+  #  - host: secrets.example.com
+  #    paths:
+  #      - path: /
+  #        pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    memory: 512Mi
+
+podAnnotations: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

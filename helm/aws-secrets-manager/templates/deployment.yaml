@@ -11,32 +11,85 @@ spec:
       {{- include "aws-secrets-manager.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        # Restart pods when configuration changes.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if not .Values.auth.existingSecret }}
+        checksum/auth: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         {{- include "aws-secrets-manager.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "aws-secrets-manager.serviceAccountName" . }}
+      # The app never calls the Kubernetes API; IRSA mounts its own projected token.
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
           ports:
-            - containerPort: {{ .Values.service.port }}
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # Kubernetes sets HOSTNAME to the pod name; Next's standalone server binds to it.
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: PORT
+              value: "3000"
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           envFrom:
-            - secretRef:
-                name: {{ include "aws-secrets-manager.fullname" . }}-azure
             - configMapRef:
                 name: {{ include "aws-secrets-manager.fullname" . }}
-          env:
-            {{- range $key, $value := .Values.env }}
-            - name: {{ $key }}
-              value: {{ $value | quote }}
-            {{- end }}
+            - secretRef:
+                name: {{ include "aws-secrets-manager.authSecretName" . }}
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health?ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - name: config-volume
-              mountPath: /config
+            # readOnlyRootFilesystem: the only writable paths.
+            - name: next-cache
+              mountPath: /app/.next/cache
+            - name: tmp
+              mountPath: /tmp
       volumes:
-        - name: config-volume
-          configMap:
-            name: {{ include "aws-secrets-manager.fullname" . }}
+        - name: next-cache
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

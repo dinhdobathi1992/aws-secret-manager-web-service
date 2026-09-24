@@ -56,3 +56,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Name of the Secret holding auth settings: the user's existingSecret, or the chart-managed one.
+*/}}
+{{- define "aws-secrets-manager.authSecretName" -}}
+{{- if .Values.auth.existingSecret }}
+{{- .Values.auth.existingSecret }}
+{{- else }}
+{{- printf "%s-auth" (include "aws-secrets-manager.fullname" .) }}
+{{- end }}
+{{- end }}

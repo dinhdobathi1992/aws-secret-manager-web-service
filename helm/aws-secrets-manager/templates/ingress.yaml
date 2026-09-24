@@ -11,6 +11,10 @@ metadata:
   {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}
     - host: {{ .host | quote }}
@@ -23,7 +27,7 @@ spec:
               service:
                 name: {{ include "aws-secrets-manager.fullname" $ }}
                 port:
-                  number: {{ $.Values.service.port }}
+                  name: http
           {{- end }}
     {{- end }}
 {{- end }}

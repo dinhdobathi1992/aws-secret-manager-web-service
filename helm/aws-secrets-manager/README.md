@@ -1,151 +1,65 @@
-# AWS Secrets Manager Web Service Helm Chart
+# aws-secrets-manager Helm chart
 
-## Prerequisites
+Deploys Secrets Console (Next.js) to EKS. The pod's base AWS identity is IRSA on the chart's
+ServiceAccount; for each configured account the app calls `sts:AssumeRole` on that account's
+`roleArn` with a per-tier session policy and the user as `SourceIdentity`.
 
-- Kubernetes cluster with AWS ALB Ingress Controller
-- AWS IAM OIDC provider configured
-- SSL certificate in AWS Certificate Manager
-- Azure AD application configured
+## Breaking change: 0.1.x → 0.2.0
 
-## Installation
+0.2.0 is a new application, and its values are not compatible with 0.1.x. There was no existing
+release to migrate, so no cutover steps are provided.
 
-1. Copy the example values file:
+| 0.1.x | 0.2.0 |
+|---|---|
+| `configMap.AWS_ACCOUNTS` (object keyed by name, optional `role_arn`) | `accounts[]`: `id`, `name`, `region`, **required** `roleArn`, and `groups.{reader,writer,admin}` (Entra group object ids) |
+| `secrets.azure.*`, `FLASK_SECRET_KEY` | `auth.existingSecret` (recommended), or `auth.{sessionSecret,tenantId,clientId,clientSecret}` |
+| `env.FLASK_*` | removed; `app.{url,name,logoUrl,logLevel}` and `extraEnv` |
+| container port 5001, health `/health/liveliness` | container port **3000**, liveness `/api/health`, readiness `/api/health?ready` |
+| service port 5001 | service port 80 → `http` (3000) |
 
-```bash
-cp values.example.yaml values.yaml
-```
-
-2. Update values.yaml with your configuration:
-
-- AWS Account ID and role names
-- Azure AD credentials
-- Domain name and SSL certificate ARN
-- Service account role ARN
-
-3. Install the chart:
+## Install
 
 ```bash
-helm install aws-secrets-manager . -f values.yaml
+cp values.example.yaml values-prod.yaml   # gitignored; fill in accounts, app.url, IRSA role, host, cert
+helm lint . -f values-prod.yaml
+helm template sc . -f values-prod.yaml | less
+helm upgrade --install sc . -n secrets-console --create-namespace -f values-prod.yaml
 ```
 
-## Configuration
-
-### Required Values
-
-- `serviceAccount.annotations.eks.amazonaws.com/role-arn`: AWS IAM role ARN
-- `ingress.annotations.alb.ingress.kubernetes.io/certificate-arn`: SSL certificate ARN
-- `secrets.azure`: Azure AD credentials
-- `configMap.AWS_ACCOUNTS`: AWS account configurations
-
-### Optional Values
-
-- `replicaCount`: Number of pod replicas
-- `resources`: CPU and memory limits
-- `ingress.annotations`: Additional ingress annotations
-
-## Security Notes
-
-- Never commit values.yaml with secrets to version control
-- Use secrets management solutions for production deployments
-- Rotate Azure AD and AWS credentials regularly
-
-## AWS IAM Setup
-
-### 1. Create IAM Role
-
-Create an IAM role with the following permissions policy:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:ListSecrets",
-        "secretsmanager:CreateSecret",
-        "secretsmanager:UpdateSecret",
-        "secretsmanager:DeleteSecret"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-### 2. Configure Trust Relationship
-
-Update the role's trust relationship to allow EKS service account to assume the role:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/oidc.eks.<REGION>.amazonaws.com/id/<OIDC_ID>"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "oidc.eks.<REGION>.amazonaws.com/id/<OIDC_ID>:sub": "system:serviceaccount:<NAMESPACE>:aws-sm-service",
-          "oidc.eks.<REGION>.amazonaws.com/id/<OIDC_ID>:aud": "sts.amazonaws.com"
-        }
-      }
-    }
-  ]
-}
-```
-
-### 3. Get EKS OIDC Provider
-
-Get your cluster's OIDC provider URL:
+Create the auth Secret first (or with External Secrets):
 
 ```bash
-# Get OIDC provider URL
-aws eks describe-cluster --name <CLUSTER_NAME> --query "cluster.identity.oidc.issuer" --output text
-
-# Extract OIDC ID
-OIDC_ID=$(aws eks describe-cluster --name <CLUSTER_NAME> --query "cluster.identity.oidc.issuer" --output text | cut -d'/' -f5)
+kubectl -n secrets-console create secret generic secrets-console-auth \
+  --from-literal=SESSION_SECRET="$(openssl rand -base64 48)" \
+  --from-literal=ENTRA_TENANT_ID=<tenant-guid> \
+  --from-literal=ENTRA_CLIENT_ID=<client-id> \
+  --from-literal=ENTRA_CLIENT_SECRET=<client-secret>
 ```
 
-### 4. Update Role Trust Policy
+## Values
 
-```bash
-# Create trust policy file
-cat > trust-policy.json << EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/oidc.eks.<REGION>.amazonaws.com/id/${OIDC_ID}"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "oidc.eks.<REGION>.amazonaws.com/id/${OIDC_ID}:sub": "system:serviceaccount:<NAMESPACE>:aws-sm-service",
-          "oidc.eks.<REGION>.amazonaws.com/id/${OIDC_ID}:aud": "sts.amazonaws.com"
-        }
-      }
-    }
-  ]
-}
-EOF
+| Key | Default | Notes |
+|---|---|---|
+| `app.url` | `""` | Public URL. The Entra redirect URI must be `<url>/api/auth/callback` |
+| `accounts` | `[]` | See `values.example.yaml`. Rendered as JSON into the `ACCOUNTS` env var |
+| `auth.existingSecret` | `""` | Keys: `SESSION_SECRET`, `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET` |
+| `serviceAccount.annotations` | `{}` | `eks.amazonaws.com/role-arn` for the hub IRSA role |
+| `ingress.*` | disabled | ALB example in `values.example.yaml`; health check path `/api/health` |
+| `extraEnv` | `[]` | e.g. `AWS_REGION` if the IRSA webhook doesn't inject it |
+| `replicaCount` | `1` | Sessions are cookie-only, so scaling out needs no code change |
 
-# Update role trust relationship
-aws iam update-assume-role-policy \
-  --role-name aws-sm-service \
-  --policy-document file://trust-policy.json
-```
+## Operational notes
 
-Replace the following placeholders:
-
-- `<AWS_ACCOUNT_ID>`: Your AWS account ID
-- `<REGION>`: AWS region (e.g., ap-southeast-1)
-- `<CLUSTER_NAME>`: Your EKS cluster name
-- `<NAMESPACE>`: Kubernetes namespace where the app is deployed
-- `<OIDC_ID>`: OIDC provider ID from step 3
+- With the default (empty) values, `helm install --wait` waits until timeout: the pod is
+  deliberately NotReady until configured.
+- **Readiness 503 means the configuration didn't parse.** The pod log names the failing field,
+  for example `ACCOUNTS[prod].groups.admin`. Liveness never calls AWS, so AWS trouble doesn't
+  restart pods.
+- The pod runs as uid 1001 with a read-only root filesystem. `/app/.next/cache` and `/tmp` are
+  emptyDirs. An `EROFS` error at startup means a writable path is missing; add an emptyDir
+  rather than turning the setting off.
+- `HOSTNAME` is forced to `0.0.0.0`. Kubernetes sets it to the pod name, and Next binds to it.
+- Server actions rely on Next's Origin check against Host / X-Forwarded-Host, so the ALB must
+  preserve Host (it does by default). Symptom when it doesn't: "Invalid Server Actions request".
+- Config and auth changes roll the pods automatically through checksum annotations; the auth
+  checksum only applies when the chart manages the Secret.
