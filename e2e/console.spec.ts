@@ -257,7 +257,7 @@ test.describe('value safety', () => {
     await expect(page.getByLabel('Version value')).toHaveValue(`${PLANTED}-v2`)
     await page.keyboard.press('Escape')
     await previous.getByRole('button', { name: 'Compare keys' }).click()
-    await expect(page.getByText(/Compare .* current/)).toBeVisible()
+    await expect(page.getByText('Key names only · both reads were audited')).toBeVisible()
     await previous.getByRole('button', { name: 'Make current' }).click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Make current' }).click()
     await expect(page.getByText(/is now current/)).toBeVisible()
