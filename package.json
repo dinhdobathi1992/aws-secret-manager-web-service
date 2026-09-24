@@ -13,15 +13,20 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "format": "prettier --write src"
+    "format": "prettier --write src",
+    "test:integration": "scripts/with-moto.sh vitest run --config vitest.integration.config.ts",
+    "dev:mock": "scripts/dev-mock.sh"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "3.1139.0",
+    "@aws-sdk/credential-providers": "3.1139.0",
     "iron-session": "9.0.1",
     "next": "16.3.6",
     "openid-client": "6.8.8",
     "pino": "10.3.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -29,10 +34,12 @@
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "aws-sdk-client-mock": "4.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "prettier": "^3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5"
   },

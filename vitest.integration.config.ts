@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
+/** moto-backed integration tests; run through scripts/with-moto.sh (pnpm test:integration). */
 export default defineConfig({
   resolve: {
     alias: {
@@ -9,9 +10,8 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    // moto-backed tests run separately via `pnpm test:integration`.
-    exclude: ['**/node_modules/**', 'src/**/*.moto.test.ts'],
+    include: ['src/**/*.moto.test.ts'],
     environment: 'node',
+    testTimeout: 30_000,
   },
 })
