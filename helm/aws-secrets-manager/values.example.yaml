@@ -1,75 +1,57 @@
-# Default values for aws-secrets-manager
-replicaCount: 1
-
+# Example for EKS with IRSA and an ALB. Copy to values-<env>.yaml (gitignored) and adjust.
 image:
   repository: dinhdobathi/aws-secrets-manager
-  tag: "1.0.0"
-  pullPolicy: IfNotPresent
+  tag: "2.0.0"
 
 serviceAccount:
-  create: true
-  name: "aws-sm-service"
   annotations:
-    eks.amazonaws.com/role-arn: "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>"
+    eks.amazonaws.com/role-arn: arn:aws:iam::<HUB_ACCOUNT_ID>:role/<HUB_ROLE>
     eks.amazonaws.com/sts-regional-endpoints: "true"
 
-service:
-  type: ClusterIP
-  port: 5001
+app:
+  url: https://secrets.example.com
+  name: "Secrets Console"
+
+accounts:
+  - id: dev
+    name: Development
+    region: ap-southeast-1
+    roleArn: arn:aws:iam::<DEV_ACCOUNT_ID>:role/secrets-console
+    groups:
+      reader: <entra-group-object-id>
+      writer: <entra-group-object-id>
+      admin: <entra-group-object-id>
+  - id: prod
+    name: Production
+    region: ap-southeast-1
+    roleArn: arn:aws:iam::<PROD_ACCOUNT_ID>:role/secrets-console
+    groups:
+      reader: <entra-group-object-id>
+      writer: <entra-group-object-id>
+      admin: <entra-group-object-id>
+
+auth:
+  # Create it with ESO or: kubectl create secret generic secrets-console-auth \
+  #   --from-literal=SESSION_SECRET=... --from-literal=ENTRA_TENANT_ID=... \
+  #   --from-literal=ENTRA_CLIENT_ID=... --from-literal=ENTRA_CLIENT_SECRET=...
+  existingSecret: secrets-console-auth
 
 ingress:
   enabled: true
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: "ip"
-    alb.ingress.kubernetes.io/group.name: aws-sm-service
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
-    alb.ingress.kubernetes.io/actions.ssl-redirect: "443"
-    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:<REGION>:<AWS_ACCOUNT_ID>:certificate/<CERT_ID>"
-    alb.ingress.kubernetes.io/healthcheck-path: /health/liveliness
   className: alb
+  annotations:
+    # A console that can reveal secrets: keep it internal (VPN / private network) unless you
+    # deliberately expose it; if internet-facing, restrict sources (inbound-cidrs or a WAF ACL).
+    alb.ingress.kubernetes.io/scheme: internal
+    # alb.ingress.kubernetes.io/inbound-cidrs: 10.0.0.0/8
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ID>
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
   hosts:
-    - host: your-domain.com
+    - host: secrets.example.com
       paths:
         - path: /
           pathType: Prefix
-
-env:
-  FLASK_ENV: "development"
-  FLASK_DEBUG: "1"
-  FLASK_APP: "app"
-
-secrets:
-  azure:
-    AZURE_CLIENT_ID: "<your-azure-client-id>"
-    AZURE_CLIENT_SECRET: "<your-azure-client-secret>"
-    AZURE_TENANT_ID: "<your-azure-tenant-id>"
-    AZURE_REDIRECT_URI: "https://your-domain.com/auth/callback"
-    AZURE_GROUP_SECRETS_READERS: "<your-readers-group-id>"
-    AZURE_GROUP_SECRETS_WRITERS: "<your-writers-group-id>"
-    FLASK_SECRET_KEY: "<your-flask-secret-key>"
-
-configMap:
-  AWS_ACCOUNTS: |-
-    {
-      "development": {
-        "name": "Development Account",
-        "role_arn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>",
-        "aws_region": "us-east-1",
-        "description": "Development environment"
-      },
-      "production": {
-        "name": "Production Account",
-        "role_arn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ROLE_NAME>",
-        "aws_region": "ap-southeast-1",
-        "description": "Production environment"
-      }
-    }
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
-    memory: 256Mi

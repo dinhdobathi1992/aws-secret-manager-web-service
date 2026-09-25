@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "rangeStrategy": "pin",
+  "packageRules": [
+    {
+      "matchPackageNames": ["next", "react", "react-dom", "eslint-config-next"],
+      "groupName": "next and react",
+      "rangeStrategy": "pin"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  }
+}

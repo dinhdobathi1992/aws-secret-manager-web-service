@@ -1,0 +1,159 @@
+{
+  "title": "Secrets Console",
+  "scenes": [
+    {
+      "id": "hook",
+      "visual": "title",
+      "sentences": [
+        {
+          "en": "Your secrets live in many AWS accounts.",
+          "vi": "Secret của bạn nằm rải rác trên nhiều tài khoản AWS."
+        },
+        {
+          "en": "Security needs one place to manage them. Developers need access, but not the whole AWS console.",
+          "vi": "Đội bảo mật cần một nơi để quản lý tất cả. Lập trình viên cần truy cập, nhưng không cần toàn quyền trên AWS console."
+        }
+      ]
+    },
+    {
+      "id": "intro",
+      "visual": "intro",
+      "sentences": [
+        {
+          "en": "Secrets Console gives security teams a single place to manage secrets across every account.",
+          "vi": "Secrets Console cho đội bảo mật một nơi duy nhất để quản lý secret trên mọi tài khoản."
+        },
+        {
+          "en": "And it gives developers a safe way to work with secrets, with no AWS console login and only the access they need.",
+          "vi": "Và giúp lập trình viên làm việc với secret một cách an toàn, không cần đăng nhập AWS console, chỉ với quyền vừa đủ."
+        }
+      ]
+    },
+    {
+      "id": "roles",
+      "visual": "roles",
+      "sentences": [
+        {
+          "en": "Least privilege by design: reader, writer, or admin, per account, straight from your Entra groups.",
+          "vi": "Quyền tối thiểu ngay từ thiết kế: reader, writer hoặc admin, cho từng tài khoản, lấy từ nhóm Entra của bạn."
+        },
+        {
+          "en": "Each action runs in a short AWS session limited to that role, so AWS enforces it too.",
+          "vi": "Mỗi thao tác chạy trong một phiên AWS ngắn, giới hạn đúng vai trò đó, nên AWS cũng thực thi quyền này."
+        }
+      ]
+    },
+    {
+      "id": "list",
+      "visual": "list",
+      "sentences": [
+        {
+          "en": "Find any secret fast: search by name, filter by tag,",
+          "vi": "Tìm secret thật nhanh: tìm theo tên, lọc theo tag,"
+        },
+        {
+          "en": "in cards or a table.",
+          "vi": "ở dạng thẻ hoặc dạng bảng."
+        }
+      ]
+    },
+    {
+      "id": "view",
+      "visual": "quickview",
+      "sentences": [
+        {
+          "en": "View a value in one click.",
+          "vi": "Xem giá trị chỉ với một cú nhấp."
+        },
+        {
+          "en": "Every view is recorded in CloudTrail under your name, and values hide after thirty seconds.",
+          "vi": "Mỗi lần xem đều được ghi trong CloudTrail dưới tên bạn, và giá trị tự ẩn sau ba mươi giây."
+        }
+      ]
+    },
+    {
+      "id": "create",
+      "visual": "create",
+      "sentences": [
+        {
+          "en": "Create secrets from RDS, DocumentDB, or Redshift templates,",
+          "vi": "Tạo secret từ mẫu RDS, DocumentDB hoặc Redshift,"
+        },
+        {
+          "en": "with passwords masked as you type.",
+          "vi": "mật khẩu được che khi bạn nhập."
+        }
+      ]
+    },
+    {
+      "id": "edit",
+      "visual": "edit",
+      "sentences": [
+        {
+          "en": "Edits highlight changed and new keys.",
+          "vi": "Khi chỉnh sửa, khóa thay đổi và khóa mới được đánh dấu."
+        },
+        {
+          "en": "The save dialog shows key names, never values, and stops if someone saved first.",
+          "vi": "Hộp thoại lưu chỉ hiện tên khóa, không hiện giá trị, và dừng lại nếu ai đó đã lưu trước."
+        }
+      ]
+    },
+    {
+      "id": "versions",
+      "visual": "versions",
+      "sentences": [
+        {
+          "en": "Every save is a new version.",
+          "vi": "Mỗi lần lưu là một phiên bản mới."
+        },
+        {
+          "en": "Compare keys, or make an older version current again.",
+          "vi": "So sánh khóa, hoặc khôi phục phiên bản cũ."
+        }
+      ]
+    },
+    {
+      "id": "danger",
+      "visual": "danger",
+      "sentences": [
+        {
+          "en": "Only admins can delete, by typing the full name,",
+          "vi": "Chỉ admin mới được xóa, bằng cách gõ đúng tên đầy đủ,"
+        },
+        {
+          "en": "with a thirty-day recovery window.",
+          "vi": "và vẫn có ba mươi ngày để khôi phục."
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "visual": "activity",
+      "sentences": [
+        {
+          "en": "Security gets one activity view across the account, straight from CloudTrail:",
+          "vi": "Đội bảo mật có một trang hoạt động cho cả tài khoản, lấy trực tiếp từ CloudTrail:"
+        },
+        {
+          "en": "who viewed or changed what, even changes made outside the app.",
+          "vi": "ai đã xem hoặc thay đổi gì, kể cả thay đổi ngoài ứng dụng."
+        }
+      ]
+    },
+    {
+      "id": "outro",
+      "visual": "outro",
+      "sentences": [
+        {
+          "en": "One place for security. Least-privilege access for developers. And secret values never reach logs.",
+          "vi": "Một nơi cho đội bảo mật. Quyền tối thiểu cho lập trình viên. Và giá trị secret không bao giờ xuất hiện trong log."
+        },
+        {
+          "en": "Secrets Console. Every account, only the access you need.",
+          "vi": "Secrets Console. Mọi tài khoản, chỉ với quyền bạn cần."
+        }
+      ]
+    }
+  ]
+}

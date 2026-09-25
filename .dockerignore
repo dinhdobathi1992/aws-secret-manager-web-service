@@ -1,0 +1,24 @@
+# Never send local config or credentials to the build context (any depth).
+**/.env
+**/.env.*
+**/*.pem
+.aws
+.azure
+.claude
+.vercel
+
+.git
+.next
+node_modules
+coverage
+playwright-report
+test-results
+plans
+helm
+docs
+e2e
+*.md
+!README.md
+Dockerfile
+docker-compose.yml
+.dockerignore

@@ -1,0 +1,149 @@
+{
+  "provider": "kokoro",
+  "voice": "am_michael",
+  "scenes": [
+    {
+      "id": "hook",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-5f82d04d4169.wav",
+          "duration": 3.243
+        },
+        {
+          "file": "assets/vo/kokoro-282833f75d8b.wav",
+          "duration": 7.616
+        }
+      ]
+    },
+    {
+      "id": "intro",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-31612c2d6dce.wav",
+          "duration": 6.571
+        },
+        {
+          "file": "assets/vo/kokoro-f55eb1a5dae7.wav",
+          "duration": 8.448
+        }
+      ]
+    },
+    {
+      "id": "roles",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-de74339f31bd.wav",
+          "duration": 6.421
+        },
+        {
+          "file": "assets/vo/kokoro-b4fbddd6dd1f.wav",
+          "duration": 7.125
+        }
+      ]
+    },
+    {
+      "id": "list",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-655948728f21.wav",
+          "duration": 4.032
+        },
+        {
+          "file": "assets/vo/kokoro-3fec736bcb2a.wav",
+          "duration": 1.643
+        }
+      ]
+    },
+    {
+      "id": "view",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-e38078bca502.wav",
+          "duration": 1.728
+        },
+        {
+          "file": "assets/vo/kokoro-56d6af086022.wav",
+          "duration": 6.101
+        }
+      ]
+    },
+    {
+      "id": "create",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-72c1b434d49f.wav",
+          "duration": 4.736
+        },
+        {
+          "file": "assets/vo/kokoro-01e26692dcb8.wav",
+          "duration": 2.283
+        }
+      ]
+    },
+    {
+      "id": "edit",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-4fcfc0f2ea05.wav",
+          "duration": 2.475
+        },
+        {
+          "file": "assets/vo/kokoro-696ba4e00f5e.wav",
+          "duration": 5.547
+        }
+      ]
+    },
+    {
+      "id": "versions",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-27402071dcf6.wav",
+          "duration": 1.877
+        },
+        {
+          "file": "assets/vo/kokoro-514d044b3ec7.wav",
+          "duration": 3.477
+        }
+      ]
+    },
+    {
+      "id": "danger",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-a208effb307d.wav",
+          "duration": 3.264
+        },
+        {
+          "file": "assets/vo/kokoro-909fb19a6b7a.wav",
+          "duration": 2.091
+        }
+      ]
+    },
+    {
+      "id": "activity",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-185ee2b5afce.wav",
+          "duration": 5.141
+        },
+        {
+          "file": "assets/vo/kokoro-318671f7cf88.wav",
+          "duration": 4.309
+        }
+      ]
+    },
+    {
+      "id": "outro",
+      "clips": [
+        {
+          "file": "assets/vo/kokoro-40f548cadb04.wav",
+          "duration": 7.04
+        },
+        {
+          "file": "assets/vo/kokoro-5badec1568e0.wav",
+          "duration": 3.968
+        }
+      ]
+    }
+  ]
+}

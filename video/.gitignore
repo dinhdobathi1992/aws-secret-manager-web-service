@@ -1,0 +1,6 @@
+.venv/
+*/out/
+*/snapshots/
+*/assets/vo/
+*/assets/shots/
+*/node_modules/

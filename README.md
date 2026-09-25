@@ -1,339 +1,158 @@
-# AWS Secrets Manager Web Service
+# Secrets Console
 
-A web application for managing AWS Secrets Manager across multiple AWS accounts with Azure AD authentication.
+https://github.com/user-attachments/assets/2f697982-e157-4272-8d49-0950a97aec79
 
-## Running with Docker
+<sub>2-minute intro with English narration and English + Vietnamese captions. Also in
+[`docs/media/secrets-console-intro.mp4`](docs/media/secrets-console-intro.mp4).</sub>
 
-### Prerequisites
+**One place for security teams to manage secrets across every AWS account, and a least-privilege
+way for developers to work with secrets without AWS console access.**
 
-- Docker installed
-- Docker Compose installed
-- Valid Azure AD configuration
-- AWS credentials for your accounts
+A web console for AWS Secrets Manager across several AWS accounts. People sign in with Entra ID
+(Azure AD). Their role in each account comes from Entra group membership: **reader**, **writer**
+or **admin**, and every AWS call runs in a short session scoped to that role. Every action is
+audited. The app never stores or logs secret values.
 
-### Environment Setup
+Built with Next.js 16 (App Router), TypeScript, shadcn/ui, and the AWS SDK v3. It ships as one
+container, deployed with the Helm chart in `helm/aws-secrets-manager`.
 
-1. Copy the example environment file:
+![Secrets list](docs/screenshots/list.png)
+
+## What it does
+
+|                                                                                      | reader | writer | admin |
+| ------------------------------------------------------------------------------------ | ------ | ------ | ----- |
+| List, search, view metadata, tags, versions                                          | yes    | yes    | yes   |
+| View a value (audited, auto-hides after 30 s or when the tab is hidden)              | yes    | yes    | yes   |
+| Create, update value (key-level diff confirmation, conflict-checked), edit tags      | –      | yes    | yes   |
+| Delete (30-day recovery window, no force delete), restore, roll back a version       | –      | –      | yes   |
+| Activity page: who did what, from CloudTrail, including changes made outside the app | –      | –      | yes   |
+
+A user with no role in an account can't see that the account exists (404). This matrix is
+`ACTION_MIN_ROLE` in `src/lib/auth/rbac.ts`. The same table produces the AWS session policy for
+each tier, so IAM enforces it as well as the app.
+
+## How it works
+
+```
+Browser ──session cookie──▶ Next.js (one container, :3000)
+  proxy.ts          per-request CSP nonce; redirects to /login when there's no cookie (not authz)
+  pages (RSC)       requireRole → metadata only; values never render on the server
+  server actions    withAction: zod → requireRole → AWS → audit (in finally)
+  AWS               base identity (IRSA in EKS, profile/env locally)
+                      → sts:AssumeRole(account.roleArn, tier session policy, SourceIdentity=UPN)
+```
+
+- **Sign-in:** authorization code flow with PKCE (`openid-client`). The session is a sealed
+  `iron-session` cookie that holds the resolved roles, never raw group ids, and lasts 1 hour.
+- **Audit:** JSON lines on stdout (`"type":"audit"`) covering who, account, tier, action, secret,
+  and the outcome (ok, denied or error). Denied and failed attempts are audited too. In AWS,
+  CloudTrail records the real person through `SourceIdentity`.
+
+## Run it locally
+
+Prerequisites: Node 24+, pnpm 10, and Docker (colima works) for moto and the image.
 
 ```bash
-cp .env.example .env
+pnpm install
 ```
 
-2. Update the `.env` file with your credentials:
-
-- Azure AD settings
-- AWS account configurations
-- Flask settings
-
-### Running the Application
-
-1. Build and start the container:
-
-```bash
-docker-compose up --build
-```
-
-2. For running in background:
-
-```bash
-docker-compose up -d
-```
-
-3. View logs:
-
-```bash
-docker-compose logs -f
-```
-
-4. Stop the application:
-
-```bash
-docker-compose down
-```
-
-### Development with Docker
-
-The application is configured for live reload during development:
-
-- Source code changes will reflect immediately
-- Environment variables can be modified in `.env`
-- Logs are available in real-time
-
-### Troubleshooting
-
-1. If Azure AD login fails:
-
-   - Verify AZURE_TENANT_ID is correctly set
-   - Check AZURE_REDIRECT_URI matches Azure AD configuration
-   - Ensure all Azure environment variables are passed to container
-
-2. If AWS operations fail:
-
-   - Verify AWS credentials in AWS_ACCOUNTS configuration
-   - Check AWS region settings
-   - Ensure proper IAM permissions
-
-3. Common Docker issues:
-   - Port 5001 already in use: Change port mapping in docker-compose.yml
-   - Environment variables not loading: Check .env file location
-   - Container not starting: Check docker-compose logs
-
-## Local Development
-
-For running without Docker, see the [Local Development Guide](docs/local-development.md).
-
-## Features
-
-### Current Features
-
-#### Authentication & Authorization
-
-- Azure AD Single Sign-On integration
-- Role-based access control with Azure AD groups:
-  - `secrets-readers`: Can view secrets
-  - `secrets-writers`: Can create/edit secrets
-- Secure session management
-- Automatic redirection to login for unauthenticated users
-
-#### AWS Secrets Management
-
-- View all secrets in AWS Secrets Manager
-- Create new secrets with predefined templates:
-  - RDS Database credentials
-  - DocumentDB credentials
-  - Redshift credentials
-  - Generic key-value pairs
-- Edit existing secrets
-- Copy secret values with one click
-- Support for JSON-formatted secrets
-- Multi-account AWS support with easy switching
-
-#### User Interface
-
-- Clean, modern interface with responsive design
-- Intuitive navigation with logo and user info
-- Modal-based interactions for creating/editing secrets
-- JSON formatting and validation
-- User-friendly notifications
-- Dark mode JSON editor
-- One-click copy functionality
-- Footer with version and attribution
-
-### Upcoming Features
-
-- [ ] Secret versioning and history
-- [ ] Secret rotation scheduling
-- [ ] Advanced search and filtering
-- [ ] Audit logging
-- [ ] Batch operations (delete, move, copy)
-- [ ] Tag management
-- [ ] Custom secret templates
-- [ ] API integration
-
-## Environment Setup
-
-### Prerequisites
-
-- Python 3.8+
-- Azure AD tenant with configured application
-- AWS account(s) with Secrets Manager access
-- Required Azure AD groups configured:
-  - secrets-readers
-  - secrets-writers
-
-### Environment Variables
-
-Create a `.env` file in the root directory with the following configuration:
-
-```env
-# Azure AD Configuration
-AZURE_CLIENT_ID=your_client_id
-AZURE_CLIENT_SECRET=your_client_secret
-AZURE_TENANT_ID=your_tenant_id
-AZURE_REDIRECT_PATH=/auth/callback
-
-# AWS Configuration
-AWS_ACCOUNTS={
-    "dev-1": {
-        "name": "Development 1",
-        "aws_access_key_id": "AKIA...",
-        "aws_secret_access_key": "...",
-        "aws_region": "ap-southeast-1",
-        "description": "Development environment for Team 1"
-    },
-    "dev-2": {
-        "name": "Development 2",
-        "aws_access_key_id": "AKIA...",
-        "aws_secret_access_key": "...",
-        "aws_region": "ap-southeast-1",
-        "description": "Development environment for Team 2"
-    },
-    "staging": {
-        "name": "Staging",
-        "aws_access_key_id": "AKIA...",
-        "aws_secret_access_key": "...",
-        "aws_region": "ap-southeast-1",
-        "description": "Staging environment"
-    },
-    "prod-sg": {
-        "name": "Production SG",
-        "aws_access_key_id": "AKIA...",
-        "aws_secret_access_key": "...",
-        "aws_region": "ap-southeast-1",
-        "description": "Production environment in Singapore"
-    }
-}
-
-# Flask Configuration
-FLASK_SECRET_KEY=generate_a_secure_secret_key
-FLASK_ENV=development
-```
-
-### Configuration Details
-
-#### Azure AD Settings
-
-- `AZURE_CLIENT_ID`: Your Azure AD application client ID
-- `AZURE_CLIENT_SECRET`: Your Azure AD application client secret
-- `AZURE_TENANT_ID`: Your Azure AD tenant ID
-- `AZURE_REDIRECT_PATH`: OAuth callback path (default: /auth/callback)
-
-#### AWS Settings
-
-- Multiple AWS accounts can be configured
-- Each account requires:
-  - `name`: Display name for the account
-  - `aws_access_key_id`: AWS access key with Secrets Manager permissions
-  - `aws_secret_access_key`: Corresponding AWS secret key
-  - `aws_region`: AWS region where secrets are stored
-  - `description`: Optional description of the account's purpose
-
-> **Note**: New accounts added to the AWS_ACCOUNTS configuration will automatically appear in the UI's account selector without requiring application changes.
-
-#### Flask Settings
-
-- `FLASK_SECRET_KEY`: Secret key for session encryption
-- `FLASK_ENV`: Application environment (development/production)
-
-## Project Structure
-
-```
-app/
-├── auth/                   # Authentication related code
-│   ├── azure_ad.py         # Azure AD OAuth implementation
-│   └── decorators.py       # Auth decorators for routes
-│
-├── aws/                    # AWS integration
-│   └── secrets_manager.py  # AWS Secrets Manager operations
-│
-├── routes/                 # Application routes
-│   └── secrets_routes.py   # Secret management endpoints
-│
-├── templates/              # HTML templates
-│   ├── components/         # Reusable UI components
-│   │   ├── footer.html     # Page footer
-│   │   └── logo.html       # Site logo
-│   │
-│   ├── secrets/           # Secret management pages
-│   │   ├── list.html      # Secrets list view
-│   │   └── view.html      # Secret detail view
-│   │
-│   └── index.html         # Home page
-│
-└── static/                # Static assets
-    ├── images/           # Image assets
-    └── favicon.svg       # Site favicon
-```
-
-### Key Components
-
-#### Authentication (`app/auth/`)
-
-- `azure_ad.py`: Handles Azure AD OAuth flow and token validation
-- `decorators.py`: Provides @login_required and @require_group decorators
-
-#### AWS Integration (`app/aws/`)
-
-- `secrets_manager.py`: Manages all AWS Secrets Manager operations
-
-#### Routes (`app/routes/`)
-
-- `secrets_routes.py`: Implements all secret management endpoints
-
-#### Templates (`app/templates/`)
-
-- Components: Reusable UI elements
-- Secrets: Secret management interface
-- Index: Main application page
-
-#### Static Assets (`app/static/`)
-
-- Images and favicon for the application
-
-### Screenshot
-
-#### Homepage:
-
-![image](https://github.com/user-attachments/assets/ac3e7752-78f0-49be-ba8b-3737185c19b5)
-
-#### Login with Azure AD
-
-![image](https://github.com/user-attachments/assets/0fb02988-d250-4c41-9539-9c6bcc6970c5)
-
-#### List All secrets
-
-![image](https://github.com/user-attachments/assets/1d1553e3-6bff-4ba4-86bc-12a5743e55dd)
-![image](https://github.com/user-attachments/assets/b7b73efe-ca62-4ea7-9c6f-d5b7b53abb44)
-
-#### View secret
-
-![image](https://github.com/user-attachments/assets/87901961-4878-44de-bf07-4fc8e55f84da)
-
-#### Edit secret
-
-![image](https://github.com/user-attachments/assets/453bf396-0013-4a5a-a432-cff0c065cf7b)
-
-#### Create secret
-
-![image](https://github.com/user-attachments/assets/b5e65efa-824b-4a0f-bc17-98f1cd85b9da)
-
-### AWS IAM Role Setup
-
-1. Create an IAM role in each AWS account with the following trust relationship:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::YOUR_BASE_ACCOUNT_ID:root"
-      },
-      "Action": "sts:AssumeRole",
-      "Condition": {}
-    }
-  ]
-}
-```
-
-2. Attach the following policy to each role:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:ListSecrets",
-        "secretsmanager:CreateSecret",
-        "secretsmanager:UpdateSecret",
-        "secretsmanager:DeleteSecret"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
+| Mode                  | Command                                                                                                                                                    | Needs                                                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **No cloud at all**   | `pnpm dev:mock`                                                                                                                                            | Docker. Starts moto (a local AWS fake) on :5055, seeds sample secrets in two mock accounts, and shows a dev-only persona picker on `/login` |
+| Real Entra + real AWS | `cp .env.example .env` (fill it in), then `AWS_PROFILE=<profile> pnpm dev`                                                                                 | An Entra app registration (`docs/entra-setup.md`) and a role per account (`docs/iam-setup.md`)                                              |
+| Production image      | `scripts/build.sh`, then `docker run --env-file .env -e AWS_PROFILE=<p> -v ~/.aws:/home/nextjs/.aws:ro -p 3000:3000 dinhdobathi/aws-secrets-manager:2.0.0` | As above                                                                                                                                    |
+| Compose               | `AWS_PROFILE=<p> docker compose up`                                                                                                                        | As above. On Linux add `APP_UID=$(id -u) APP_GID=$(id -g)`                                                                                  |
+
+On Linux, `~/.aws` files belong to your user, so the container must run as you: add
+`--user $(id -u):$(id -g) --tmpfs /app/.next/cache:mode=1777` to `docker run`, or set
+`APP_UID`/`APP_GID` for compose.
+
+`.env` rules: **no quotes around values** (`docker run --env-file` keeps them literally), and
+**no `$`** (compose expands it). Generate the session secret with `openssl rand -hex 32`.
+
+## Configuration
+
+| Variable                                 | Required | Notes                                                                                                                                      |
+| ---------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ACCOUNTS`                               | yes      | JSON array: `id` (lowercase, digits, `-`), `name`, `region`, `roleArn` (required), `groups.{reader,writer,admin}` (Entra group object ids) |
+| `APP_URL`                                | yes      | Public base URL. The OIDC redirect is `${APP_URL}/api/auth/callback`. Read at runtime only                                                 |
+| `SESSION_SECRET`                         | yes      | At least 32 characters                                                                                                                     |
+| `ENTRA_TENANT_ID`                        | yes      | Tenant **GUID** (not `common`)                                                                                                             |
+| `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET` | yes      | App registration                                                                                                                           |
+| `APP_NAME`, `APP_LOGO_URL`, `LOG_LEVEL`  | no       | Branding (logo: a same-origin path or an https URL) and pino level                                                                         |
+| `AWS_PROFILE` / IRSA                     | –        | The base identity for AssumeRole. The standard AWS SDK chain is used                                                                       |
+
+Bad configuration never crashes silently. `/api/health?ready` returns 503, and the log names the
+failing field, e.g. `ACCOUNTS[prod].groups.admin`.
+
+## Scripts
+
+| Command                        | What it does                                                                                              |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `pnpm lint` / `pnpm typecheck` | ESLint (bans `JSON.parse` and `.json()` on secret data) and `tsc`                                         |
+| `pnpm test`                    | Unit tests (vitest). Single test: `pnpm vitest run src/lib/auth/rbac.test.ts -t "admin"`                  |
+| `pnpm test:integration`        | Secrets Manager lifecycle against moto (starts and stops it)                                              |
+| `pnpm test:e2e`                | Playwright against a production build + moto: every role, conflicts, leak check                           |
+| `scripts/image-smoke.sh`       | One image, two `APP_URL`s: a server action works in both, cross-origin is rejected, no values in the logs |
+| `scripts/build.sh`             | Builds the image locally. `PUSH=1` builds amd64+arm64 and pushes (explicit, separate decision)            |
+
+Full gate: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm test:e2e && pnpm audit --prod --audit-level=high && scripts/build.sh && scripts/image-smoke.sh && helm lint helm/aws-secrets-manager`
+
+## Design
+
+Light, card-based UI (Inter, indigo primary, green create/save), with a dark-mode toggle whose
+tokens are interim. The UI/UX contract (tokens, screens, role visibility, behaviour rules) is
+`docs/design-contract.md`.
+
+Screenshots come from the e2e mock (moto, fake seeded data, admin persona):
+
+|                                                                                                                     |                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| ![View secret dialog](docs/screenshots/quick-view.png) View secret: audited quick view with countdown               | ![Create secret](docs/screenshots/create.png) Create: RDS / DocumentDB / Redshift / Other templates (key names only) |
+| ![Secret detail with values hidden](docs/screenshots/value-hidden.png) Detail: four tiles, values hidden until View | ![Editing a key/value secret](docs/screenshots/value-editing.png) Editing: CHANGED / NEW rows, auto-hide paused      |
+| ![Save confirmation](docs/screenshots/save-confirm.png) Save: key names only, never values                          | ![Versions](docs/screenshots/versions.png) Versions: compare keys, view, make current                                |
+| ![Tags](docs/screenshots/tags.png) Tags: unsaved-change count                                                       | ![Danger zone](docs/screenshots/danger.png) Danger zone (admin): 30-day recovery, typed-name confirm                 |
+| ![Secrets list as a table](docs/screenshots/list-table.png) Table layout                                            | ![Scheduled deletion](docs/screenshots/deleted.png) Scheduled deletion                                               |
+
+The Activity page isn't pictured: moto doesn't implement CloudTrail `LookupEvents`, and a real
+account's events would show real people and resources.
+
+## Intro video
+
+The video is generated from code with [HyperFrames](https://github.com/heygen-com/hyperframes) in
+`video/secrets-console-intro/`. The narration and captions are in `script.json`. To rebuild:
+`python3 tools/voiceover.py && python3 tools/build.py && npx -y hyperframes@0.7.99 render .`
+(the voice-over uses Gemini Flash TTS when a key is set, otherwise local Kokoro). Copy the output
+to `docs/media/` after compressing it for the repo.
+
+## Deploy
+
+See `helm/aws-secrets-manager/README.md` (chart 0.2.0, which is a breaking change from 0.1.x),
+`docs/iam-setup.md` and `docs/entra-setup.md`.
+
+## Known gaps
+
+- **Tested against moto, not AWS, for:**
+  - version staging edge cases, deletion and KMS behaviour;
+  - IAM, session policies and account boundaries, which moto doesn't enforce. Mock-level unit
+    tests prove the app passes the right `roleArn`, session policy and `SourceIdentity`.
+- **moto differs from AWS on `DeletedDate`.** Real AWS returns when deletion was requested
+  (checked on a real account on 2026-09-25). moto returns the permanent-deletion date, so
+  `dev:mock` shows a later date than real AWS would.
+- **moto doesn't implement CloudTrail `LookupEvents`.** The Activity page's data path is covered
+  by unit tests and was tested manually against a real account. e2e covers its authorization
+  only.
+- **Activity page limits:**
+  - CloudTrail event history covers 90 days and lags about 15 minutes.
+  - Each view loads up to 4 pages (200 events).
+  - Attempts the app blocks never reach AWS, so they appear only in the app's audit log.
+- **Signing in:**
+  - Groups overage (the token carries a group-overage marker instead of a `groups` list) is
+    rejected with an explanation; there is no Microsoft Graph fallback.
+  - Removing someone from a group takes effect at their next sign-in, within 1 hour.
+- **Secrets list:**
+  - Sorting and the exact tag-pair filter apply within the current page. AWS paginates by
+    creation date.
+  - Names containing `.`, `..` or empty path segments work, but use a `~`-encoded URL.
+- **Clipboard:** clearing it after 30 seconds is best-effort and depends on browser permission.
