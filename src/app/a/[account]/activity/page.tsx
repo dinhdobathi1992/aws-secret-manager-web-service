@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { ActivityRange } from '@/components/activity-range'
+import { ActivityTiles } from '@/components/activity-tiles'
 import { ActivityView } from '@/components/activity-view'
 import { AwsErrorState } from '@/components/aws-error-state'
 import { ForbiddenState } from '@/components/forbidden-state'
@@ -32,49 +33,8 @@ export const dynamic = 'force-dynamic'
 type RawSearch = Record<string, string | string[] | undefined>
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
-function FilterTile({
-  href,
-  on,
-  label,
-  value,
-  sub,
-  icon,
-}: {
-  href: string
-  on: boolean
-  label: string
-  value: string
-  sub: string
-  icon?: React.ReactNode
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={on ? 'true' : undefined}
-      className={cn(
-        'flex flex-col gap-1.5 rounded-xl border bg-card px-4 py-3.5 text-left transition-colors hover:border-foreground/40',
-        on && 'border-foreground ring-1 ring-foreground ring-inset',
-      )}
-    >
-      <span className="flex items-center justify-between gap-2">
-        <span
-          className={cn(
-            'text-[13px] font-medium',
-            on ? 'text-foreground' : 'text-muted-foreground',
-          )}
-        >
-          {label}
-        </span>
-        {icon}
-      </span>
-      <span className="text-2xl leading-none font-semibold">{value}</span>
-      <span className="text-xs text-muted-foreground">{sub}</span>
-    </Link>
-  )
-}
-
 const tileIcon = (tint: string, icon: React.ReactNode) => (
-  <span className={cn('inline-flex size-7 items-center justify-center rounded-[7px]', tint)}>
+  <span className={cn('inline-flex size-[30px] items-center justify-center rounded-lg', tint)}>
     {icon}
   </span>
 )
@@ -124,20 +84,20 @@ export default async function ActivityPage({
   const newestHref = `?${new URLSearchParams({ ...keepBase, ...(type === 'changes' ? {} : { type }) }).toString()}`
 
   const header = (
-    <div className="flex items-end justify-between">
-      <div className="flex flex-col gap-1">
+    <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-2xl font-semibold tracking-[-0.01em]">Activity</h1>
+          <h1 className="text-3xl font-semibold text-foreground">Activity</h1>
           <RoleBadge role="admin" />
         </div>
-        <p className="text-[13px] text-muted-foreground">
-          Secrets Manager events in {auth.account.name} from AWS CloudTrail (up to 90 days).
-          Includes changes made outside this app.
+        <p className="text-[15px] text-muted-foreground">
+          Secrets Manager events in {auth.account.name} from AWS CloudTrail (up to 90 days),
+          including changes made outside this app.
         </p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <ActivityRange />
-        <Button asChild variant="outline" size="sm" className="h-8">
+        <Button asChild variant="secondary">
           <Link href={newestHref}>
             <RotateCcwIcon />
             Newest
@@ -203,24 +163,22 @@ export default async function ActivityPage({
     <>
       {header}
       {/* CloudTrail is paged, so counts only cover what's loaded; "+" marks that more exist. */}
-      <p className="-mb-2 text-xs text-muted-foreground">
+      <p className="-mb-3 text-[13px] text-muted-foreground">
         Counts cover the {fetched.length} {fetched.length === 1 ? 'event' : 'events'} loaded
         {cursor ? ' on this page' : ''} from {range.label.toLowerCase()}
         {result.data.nextToken ? '; older events are not counted yet.' : '.'}
       </p>
-      <div role="group" aria-label="Show" className="grid grid-cols-5 gap-3">
-        {ACTIVITY_TYPES.map((t) => (
-          <FilterTile
-            key={t.id}
-            href={typeHref(t.id)}
-            on={type === t.id}
-            label={t.label}
-            value={`${count(t.id)}${result.data.nextToken ? '+' : ''}`}
-            sub={tiles[t.id].sub}
-            icon={tiles[t.id].icon}
-          />
-        ))}
-      </div>
+      <ActivityTiles
+        tiles={ACTIVITY_TYPES.map((t) => ({
+          id: t.id,
+          label: t.label,
+          href: typeHref(t.id),
+          on: type === t.id,
+          value: `${count(t.id)}${result.data.nextToken ? '+' : ''}`,
+          sub: tiles[t.id].sub,
+          icon: tiles[t.id].icon,
+        }))}
+      />
       <ActivityView
         accountId={auth.account.id}
         events={events}
@@ -229,7 +187,7 @@ export default async function ActivityPage({
         emptyText={emptyText}
         olderLink={
           olderHref ? (
-            <Button asChild variant="outline" size="sm" className="h-[30px]">
+            <Button asChild variant="secondary" size="sm">
               <Link href={olderHref}>Load older events</Link>
             </Button>
           ) : null

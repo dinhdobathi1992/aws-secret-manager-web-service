@@ -8,8 +8,8 @@ export const ACTIVITY_RANGES = [
 ] as const
 
 export const ACTIVITY_TYPES = [
-  { id: 'changes', label: 'Changes & reveals' },
-  { id: 'reveals', label: 'Reveals' },
+  { id: 'changes', label: 'Changes & views' },
+  { id: 'reveals', label: 'Views' },
   { id: 'writes', label: 'Changes' },
   { id: 'failed', label: 'Failed' },
   { id: 'all', label: 'All events' },
@@ -60,4 +60,51 @@ export function activityWindow(
     nextToken: valid ? cursor : undefined,
     end0: end,
   }
+}
+
+export type ActivityRow = { e: ActivityEvent; count: number }
+export type ActivityDay = { day: string; total: number; rows: ActivityRow[] }
+
+const DAY_FMT = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
+/**
+ * Groups events (newest first) under UTC day headers and collapses consecutive repeats: same
+ * user, action, secret, result and minute become one row with a count. The first (newest) event
+ * of a run is the one shown and expanded.
+ */
+export function groupActivity(events: ActivityEvent[]): ActivityDay[] {
+  const days: ActivityDay[] = []
+  let prev: ActivityEvent | undefined
+  for (const e of events) {
+    const day = DAY_FMT.format(new Date(e.time))
+    let current = days.at(-1)
+    if (!current || current.day !== day) {
+      current = { day, total: 0, rows: [] }
+      days.push(current)
+      prev = undefined
+    }
+    current.total++
+    const last = current.rows.at(-1)
+    if (
+      last &&
+      prev &&
+      prev.who === e.who &&
+      prev.eventName === e.eventName &&
+      prev.secretName === e.secretName &&
+      (prev.errorCode ?? '') === (e.errorCode ?? '') &&
+      prev.time.slice(0, 16) === e.time.slice(0, 16)
+    ) {
+      last.count++
+    } else {
+      current.rows.push({ e, count: 1 })
+    }
+    prev = e
+  }
+  return days
 }

@@ -23,7 +23,7 @@ export function ActivityRange() {
           const s = next.toString()
           router.push(s ? `${pathname}?${s}` : pathname)
         }}
-        className="h-8 rounded-lg border bg-card px-2 text-[13px] text-foreground"
+        className="h-[38px] rounded-lg border bg-card px-2.5 text-sm text-foreground"
       >
         {ACTIVITY_RANGES.map((r) => (
           <option key={r.id} value={r.id}>

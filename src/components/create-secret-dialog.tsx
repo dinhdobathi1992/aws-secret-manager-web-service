@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -22,6 +21,13 @@ import { secretHref } from '@/lib/ui/format'
 import { isValidJson } from '@/lib/ui/secret-value'
 import { cn } from '@/lib/utils'
 import { entriesFrom, newRow, tagChanges, type KvRow, type TagRow } from '@/lib/ui/editor-model'
+import {
+  applyTemplate,
+  isMaskedKey,
+  placeholderFor,
+  TEMPLATES,
+  type TemplateId,
+} from '@/lib/ui/secret-templates'
 import { KvEditor } from './kv-editor'
 import { TagRowsEditor } from './tag-rows-editor'
 
@@ -40,8 +46,10 @@ export function CreateSecretDialog({
   const [pending, startTransition] = useTransition()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [template, setTemplate] = useState<TemplateId>('other')
   const [kind, setKind] = useState<Kind>('kv')
   const [rows, setRows] = useState<KvRow[]>([newRow()])
+  const [showTags, setShowTags] = useState(false)
   const [raw, setRaw] = useState('')
   const [tags, setTags] = useState<TagRow[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -49,10 +57,12 @@ export function CreateSecretDialog({
   const reset = () => {
     setName('')
     setDescription('')
+    setTemplate('other')
     setKind('kv')
     setRows([newRow()])
     setRaw('')
     setTags([])
+    setShowTags(false)
     setError(null)
   }
 
@@ -87,16 +97,26 @@ export function CreateSecretDialog({
     })
   }
 
+  const pickTemplate = (t: TemplateId) => {
+    setTemplate(t)
+    setKind('kv')
+    setRows(applyTemplate(t, rows).map((r) => newRow(r.key, r.value)))
+  }
+
   const kindButton = (k: Kind, label: string) => (
-    <Button
+    <button
       type="button"
-      size="sm"
-      variant={kind === k ? 'default' : 'outline'}
       aria-pressed={kind === k}
       onClick={() => setKind(k)}
+      className={cn(
+        'inline-flex h-7 items-center rounded-md px-3 text-[13px] font-medium',
+        kind === k
+          ? 'bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]'
+          : 'text-muted-foreground hover:text-foreground',
+      )}
     >
       {label}
-    </Button>
+    </button>
   )
 
   return (
@@ -108,59 +128,105 @@ export function CreateSecretDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button>
+        <Button variant="success" size="lg">
           <PlusIcon />
-          New secret
+          Create secret
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[640px]">
+      <DialogContent className="max-h-[90vh] gap-[18px] overflow-y-auto p-8 sm:max-w-[800px]">
         <DialogHeader>
-          <DialogTitle>New secret in {accountName}</DialogTitle>
+          <DialogTitle className="text-xl">Create new secret</DialogTitle>
           <DialogDescription>
-            The value is stored in AWS Secrets Manager and never logged.
+            In {accountName}. The value is stored in AWS Secrets Manager and never logged.
           </DialogDescription>
         </DialogHeader>
         <form
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-[18px]"
           onSubmit={(e) => {
             e.preventDefault()
             submit()
           }}
         >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="secret-name">Name</Label>
-            <Input
-              id="secret-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="team/app/purpose"
-              className="font-mono"
-              aria-describedby="secret-name-hint"
-              autoFocus
-            />
-            <span id="secret-name-hint" className="text-xs text-muted-foreground">
-              Use a path like <span className="font-mono">team/app/purpose</span>. Letters, digits
-              and / _ + = . @ - only.
-            </span>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="secret-description">Description</Label>
-            <Input
-              id="secret-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this for? (optional)"
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="secret-name" className="text-label">
+                Secret name
+              </Label>
+              <Input
+                id="secret-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="team/app/purpose"
+                className="h-10 font-mono text-[13px]"
+                aria-describedby="secret-name-hint"
+                autoFocus
+              />
+              <span id="secret-name-hint" className="text-xs text-muted-foreground">
+                Letters, numbers and / _ + = . @ -
+              </span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="secret-description" className="text-label">
+                Description <span className="font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="secret-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="What is this secret for?"
+                className="h-10"
+              />
+            </div>
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Value type</span>
-            <div className="flex gap-1.5" role="group" aria-label="Value type">
-              {kindButton('kv', 'Key / value')}
-              {kindButton('json', 'JSON')}
-              {kindButton('text', 'Plain text')}
+            <span className="text-sm font-medium text-label">Secret type</span>
+            <div
+              role="group"
+              aria-label="Secret type"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+            >
+              {(Object.keys(TEMPLATES) as TemplateId[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={template === t}
+                  onClick={() => pickTemplate(t)}
+                  className={cn(
+                    'flex flex-col items-start gap-1 rounded-lg border-2 px-4 py-3.5 text-left',
+                    template === t
+                      ? 'border-primary bg-primary-subtle'
+                      : 'border-border bg-card hover:border-border-strong',
+                  )}
+                >
+                  <span className="text-sm font-semibold text-foreground">
+                    {TEMPLATES[t].label}
+                  </span>
+                  <span className="text-[13px] text-muted-foreground">{TEMPLATES[t].hint}</span>
+                </button>
+              ))}
             </div>
-            <div className={cn('overflow-hidden rounded-lg border', kind !== 'kv' && 'hidden')}>
-              <KvEditor rows={rows} onChange={setRows} masked />
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-label">Value</span>
+              <div
+                className="flex gap-0.5 rounded-lg bg-[#eceef3] p-[3px] dark:bg-muted"
+                role="group"
+                aria-label="Value type"
+              >
+                {kindButton('kv', 'Key / value')}
+                {kindButton('json', 'JSON')}
+                {kindButton('text', 'Plain text')}
+              </div>
+            </div>
+            <div className={cn(kind !== 'kv' && 'hidden')}>
+              <KvEditor
+                variant="form"
+                rows={rows}
+                onChange={setRows}
+                masked={isMaskedKey}
+                placeholderFor={(k) => placeholderFor(template, k)}
+              />
             </div>
             {kind !== 'kv' && (
               <Textarea
@@ -174,25 +240,42 @@ export function CreateSecretDialog({
               />
             )}
           </div>
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium">
-              Tags <span className="font-normal text-muted-foreground">(optional)</span>
-            </span>
-            <TagRowsEditor rows={tags} onChange={setTags} />
-          </div>
+          {showTags && (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-label">
+                Tags <span className="font-normal text-muted-foreground">(optional)</span>
+              </span>
+              <TagRowsEditor rows={tags} onChange={setTags} />
+            </div>
+          )}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}
             </p>
           )}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <div className="flex items-center gap-2.5 border-t pt-4">
+            {!showTags && (
+              <Button
+                type="button"
+                variant="text"
+                className="px-1"
+                onClick={() => {
+                  setShowTags(true)
+                  setTags([newRow()])
+                }}
+              >
+                <PlusIcon />
+                Add tags
+              </Button>
+            )}
+            <div className="flex-1" />
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" variant="success" disabled={pending}>
               {pending ? 'Creating…' : 'Create secret'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

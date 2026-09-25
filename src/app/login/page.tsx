@@ -32,9 +32,11 @@ export default async function LoginPage({
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm rounded-lg border p-8 shadow-sm">
-        <h1 className="text-lg font-semibold">{getConfig().APP_NAME}</h1>
-        <p className="mt-1 text-sm text-zinc-500">Sign in with your organisation account.</p>
+      <div className="surface w-full max-w-sm p-8">
+        <h1 className="text-xl font-semibold text-foreground">{getConfig().APP_NAME}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Sign in with your organisation account.
+        </p>
         {error && (
           <p
             role="alert"
@@ -46,7 +48,7 @@ export default async function LoginPage({
         {/* Plain link: the route handler redirects to Entra. */}
         <a
           href={`/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`}
-          className="mt-6 flex w-full items-center justify-center rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
+          className="mt-6 flex h-[42px] w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-button hover:bg-primary-hover"
         >
           Sign in with Microsoft
         </a>

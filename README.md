@@ -14,7 +14,7 @@ container, deployed with the Helm chart in `helm/aws-secrets-manager`.
 |                                                                                      | reader | writer | admin |
 | ------------------------------------------------------------------------------------ | ------ | ------ | ----- |
 | List, search, view metadata, tags, versions                                          | yes    | yes    | yes   |
-| Reveal a value (audited, auto-hides after 30 s or when the tab is hidden)            | yes    | yes    | yes   |
+| View a value (audited, auto-hides after 30 s or when the tab is hidden)              | yes    | yes    | yes   |
 | Create, update value (key-level diff confirmation, conflict-checked), edit tags      | –      | yes    | yes   |
 | Delete (30-day recovery window, no force delete), restore, roll back a version       | –      | –      | yes   |
 | Activity page: who did what, from CloudTrail, including changes made outside the app | –      | –      | yes   |
@@ -92,17 +92,19 @@ Full gate: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration &&
 
 ## Design
 
-Dark by default, with a light theme toggle in the header. The UI/UX contract (tokens, screens,
-role visibility, behaviour rules) is `docs/design-contract.md`.
+Light, card-based UI (Inter, indigo primary, green create/save), with a dark-mode toggle whose
+tokens are interim. The UI/UX contract (tokens, screens, role visibility, behaviour rules) is
+`docs/design-contract.md`.
 
-Screenshots come from `pnpm dev:mock` (moto, fake seeded data, admin persona):
+Screenshots come from the e2e mock (moto, fake seeded data, admin persona):
 
-|                                                                                                                           |                                                                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| ![Secret detail with values hidden](docs/screenshots/value-hidden.png) Detail: metadata tiles, values hidden until Reveal | ![Editing a key/value secret](docs/screenshots/value-editing.png) Editing: existing keys locked, CHANGED / NEW badges, auto-hide paused |
-| ![Save confirmation](docs/screenshots/save-confirm.png) Save: key names only, never values                                | ![Versions](docs/screenshots/versions.png) Versions: compare keys, reveal, make current                                                 |
-| ![Tags](docs/screenshots/tags.png) Tags: unsaved-change count                                                             | ![Danger zone](docs/screenshots/danger.png) Danger zone (admin): 30-day recovery, typed-name confirm                                    |
-| ![Secrets list, light theme](docs/screenshots/list-light.png) Light theme                                                 |                                                                                                                                         |
+|                                                                                                                     |                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| ![View secret dialog](docs/screenshots/quick-view.png) View secret: audited quick view with countdown               | ![Create secret](docs/screenshots/create.png) Create: RDS / DocumentDB / Redshift / Other templates (key names only) |
+| ![Secret detail with values hidden](docs/screenshots/value-hidden.png) Detail: four tiles, values hidden until View | ![Editing a key/value secret](docs/screenshots/value-editing.png) Editing: CHANGED / NEW rows, auto-hide paused      |
+| ![Save confirmation](docs/screenshots/save-confirm.png) Save: key names only, never values                          | ![Versions](docs/screenshots/versions.png) Versions: compare keys, view, make current                                |
+| ![Tags](docs/screenshots/tags.png) Tags: unsaved-change count                                                       | ![Danger zone](docs/screenshots/danger.png) Danger zone (admin): 30-day recovery, typed-name confirm                 |
+| ![Secrets list as a table](docs/screenshots/list-table.png) Table layout                                            | ![Scheduled deletion](docs/screenshots/deleted.png) Scheduled deletion                                               |
 
 The Activity page isn't pictured: moto doesn't implement CloudTrail `LookupEvents`, and a real
 account's events would show real people and resources.

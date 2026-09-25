@@ -22,12 +22,13 @@ export default async function SecretPage({
   searchParams,
 }: {
   params: Promise<{ account: string; name: string[] }>
-  searchParams: Promise<{ tab?: string }>
+  searchParams: Promise<{ tab?: string | string[]; edit?: string | string[] }>
 }) {
   const { account, name: segments } = await params
   const name = secretNameFromSegments(segments)
   if (!name) notFound()
-  const requested = (await searchParams).tab
+  const sp = await searchParams
+  const requested = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab
   const tab = TABS.find((t) => t === requested) ?? 'value'
   const { auth, client } = await pageContext(account, 'view')
 
@@ -68,6 +69,7 @@ export default async function SecretPage({
           name={name}
           canEdit={can(auth.role, 'update')}
           upn={auth.user.upn}
+          autoView={sp.edit === '1'}
         />
       )}
       {tab === 'versions' && (

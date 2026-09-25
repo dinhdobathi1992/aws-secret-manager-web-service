@@ -1,6 +1,5 @@
 'use client'
 
-import { ActivityIcon, ClockIcon, LockIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -23,17 +22,16 @@ export function NavTabs({
       : 'secrets'
   const item = (on: boolean) =>
     cn(
-      'flex h-8 items-center gap-2 rounded-lg px-2.5 text-[13px] font-medium transition-colors',
-      on ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
+      'flex h-[38px] items-center gap-2 rounded-md px-3.5 text-sm font-medium text-primary transition-colors',
+      on ? 'bg-primary-subtle' : 'hover:bg-primary-subtle/60',
     )
   return (
-    <nav aria-label="Main" className="ml-2 flex items-center gap-0.5">
+    <nav aria-label="Main" className="flex items-center gap-1">
       <Link
         href={base}
         className={item(active === 'secrets')}
         aria-current={active === 'secrets' ? 'page' : undefined}
       >
-        <LockIcon className="size-[15px]" />
         Secrets
       </Link>
       {showActivity && (
@@ -42,7 +40,6 @@ export function NavTabs({
           className={item(active === 'activity')}
           aria-current={active === 'activity' ? 'page' : undefined}
         >
-          <ActivityIcon className="size-[15px]" />
           Activity
         </Link>
       )}
@@ -51,7 +48,6 @@ export function NavTabs({
         className={item(active === 'deleted')}
         aria-current={active === 'deleted' ? 'page' : undefined}
       >
-        <ClockIcon className="size-[15px]" />
         Scheduled deletion
         {deletedBadge}
       </Link>

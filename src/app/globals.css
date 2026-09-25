@@ -1,14 +1,16 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-mono: var(--font-geist-mono);
-  --font-sans: var(--font-geist-sans);
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -39,8 +41,23 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Header strips and footers inside cards (the refactor's #111 in dark). */
+  /* Table headers, card footers, expanded rows. */
   --color-sunken: var(--sunken);
+  --color-label: var(--label);
+  --color-placeholder: var(--placeholder);
+  --color-border-strong: var(--border-strong);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-subtle-border: var(--primary-subtle-border);
+  --color-primary-hover: var(--primary-hover);
+  --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
+  --color-code-bg: var(--code-bg);
+  --color-code-fg: var(--code-fg);
+  --color-code-key: var(--code-key);
+  --color-code-meta: var(--code-meta);
+  --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-button: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-dialog: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -50,40 +67,54 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Light design (contract §2). Dark mode keeps interim zinc tokens until it is redesigned. */
 :root {
-  --background: oklch(0.985 0 0);
-  --sunken: oklch(0.975 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: #f5f7fb;
+  --sunken: #f9fafb;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #1a1f36;
+  --popover: #ffffff;
+  --popover-foreground: #1a1f36;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-foreground: #ffffff;
+  --primary-subtle: #eef2ff;
+  --primary-subtle-border: #c7d2fe;
+  /* #047857, not the contract's #059669: white on #059669 is 3.8:1, below the §8 4.5:1 floor. */
+  --success: #047857;
+  --success-hover: #065f46;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #4b5563;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --label: #374151;
+  --placeholder: #9ca3af;
+  --accent: #eef2ff;
+  --accent-foreground: #3730a3;
+  --destructive: #b91c1c;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --input: #e5e7eb;
+  --ring: #4f46e5;
+  --code-bg: #1a1f36;
+  --code-fg: #e5e7eb;
+  --code-key: #a5b4fc;
+  --code-meta: #9ca3af;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1f36;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef2ff;
+  --sidebar-accent-foreground: #3730a3;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #4f46e5;
 }
 
 .dark {
@@ -94,18 +125,30 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: #818cf8;
+  --primary-hover: #a5b4fc;
+  --primary-foreground: #111827;
+  --primary-subtle: oklch(0.28 0.08 277);
+  --primary-subtle-border: oklch(0.4 0.12 277);
+  --success: #10b981;
+  --success-hover: #34d399;
   --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
+  --secondary-foreground: oklch(0.92 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --label: oklch(0.87 0 0);
+  --placeholder: oklch(0.556 0 0);
+  --accent: oklch(0.28 0.08 277);
+  --accent-foreground: #c7d2fe;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
+  --border-strong: oklch(1 0 0 / 18%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: #818cf8;
+  --code-bg: oklch(0.12 0 0);
+  --code-fg: #e5e7eb;
+  --code-key: #a5b4fc;
+  --code-meta: #9ca3af;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -113,12 +156,23 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #111827;
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: #818cf8;
+}
+
+/* White card with the soft shadow (cards, tables, nav). Dark mode adds a hairline instead. */
+@utility surface {
+  background-color: var(--card);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+  &:where(.dark *) {
+    box-shadow: none;
+    border: 1px solid var(--border);
+  }
 }
 
 @layer base {
@@ -134,5 +188,15 @@
   }
   html {
     @apply font-sans;
+  }
+  body {
+    color: var(--card-foreground);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--placeholder);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }

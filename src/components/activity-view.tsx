@@ -33,26 +33,26 @@ export function ActivityView({
     [events, user, secret],
   )
   const search = (label: string, value: string, set: (v: string) => void, mono?: boolean) => (
-    <label className="flex h-[34px] w-[260px] items-center gap-2 rounded-lg border bg-background px-2.5 text-muted-foreground focus-within:ring-2 focus-within:ring-ring/50">
-      <SearchIcon className="size-[15px] shrink-0" />
+    <label className="flex h-10 w-[280px] items-center gap-2.5 rounded-lg border bg-card px-3 text-placeholder focus-within:ring-2 focus-within:ring-ring/40">
+      <SearchIcon className="size-4 shrink-0" />
       <input
         type="search"
         value={value}
         onChange={(e) => set(e.target.value)}
         aria-label={`Filter by ${label.toLowerCase()}`}
         placeholder={label}
-        className={`min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground ${mono ? 'font-mono' : ''}`}
+        className={`min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none ${mono ? 'font-mono' : ''}`}
       />
     </label>
   )
 
   return (
-    <section className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center gap-2 border-b px-4 py-3">
+    <section className="surface overflow-hidden">
+      <div className="flex items-center gap-2.5 border-b px-5 py-4">
         {search('User', user, setUser)}
         {search('Secret name', secret, setSecret, true)}
         <div className="flex-1" />
-        <span className="text-[13px] text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           Showing <strong className="text-foreground">{shown.length}</strong> of {loaded} loaded
           events
         </span>
@@ -65,7 +65,7 @@ export function ActivityView({
           {emptyText}
         </div>
       )}
-      <div className="flex items-center gap-2.5 border-t bg-sunken px-4 py-3 text-xs text-muted-foreground">
+      <div className="flex items-center gap-2.5 border-t bg-sunken px-5 py-3.5 text-[13px] text-muted-foreground">
         <InfoIcon className="size-4 shrink-0" />
         <span>
           Attempts the app blocks (for example a reader trying to delete) never reach AWS. They’re

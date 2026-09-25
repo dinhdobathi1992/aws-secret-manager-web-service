@@ -40,29 +40,29 @@ export function DangerPanel({
 
   const fact = (label: string, value: string) => (
     <div className="flex flex-col gap-1">
-      <span className="text-[11px] font-semibold tracking-[.06em] text-muted-foreground uppercase">
+      <span className="text-xs font-semibold tracking-[.04em] text-muted-foreground uppercase">
         {label}
       </span>
-      <span className="text-sm font-medium">{value}</span>
+      <span className="text-sm font-medium text-foreground">{value}</span>
     </div>
   )
 
   return (
     <section
       aria-labelledby="del-title"
-      className="w-full max-w-[800px] overflow-hidden rounded-xl border border-red-300 bg-card dark:border-red-900"
+      className="surface w-full max-w-[800px] overflow-hidden border border-red-200 dark:border-red-900"
     >
-      <div className="flex flex-col gap-4 px-6 py-5">
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex size-8 items-center justify-center rounded-lg bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">
-            <Trash2Icon className="size-4" />
+      <div className="flex flex-col gap-[18px] px-7 py-6">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex size-[38px] items-center justify-center rounded-[10px] bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">
+            <Trash2Icon className="size-[18px]" />
           </span>
-          <h2 id="del-title" className="text-base font-semibold">
+          <h2 id="del-title" className="text-lg font-semibold text-foreground">
             Delete this secret
           </h2>
           <RoleBadge role="admin" />
         </div>
-        <div className="grid grid-cols-3 gap-4 rounded-[10px] border bg-sunken px-4 py-3.5">
+        <div className="grid grid-cols-3 gap-4 rounded-lg border bg-sunken px-[18px] py-4">
           {fact('Takes effect', 'Immediately. Apps reading it fail')}
           {fact('Recovery window', `${recoveryDays} days, from Scheduled deletion`)}
           {fact('Gone for good', `About ${goneBy}`)}
@@ -70,7 +70,7 @@ export function DangerPanel({
         {lastAccessed && (
           <div
             role="note"
-            className="flex gap-2.5 rounded-[10px] border border-amber-300 bg-amber-50 px-3.5 py-3 text-[13px] text-amber-900 dark:border-amber-900 dark:bg-amber-950/45 dark:text-amber-200"
+            className="flex gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/45 dark:text-amber-200"
           >
             <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
             <span>
@@ -80,9 +80,12 @@ export function DangerPanel({
           </div>
         )}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="confirm-name" className="text-[13px] font-medium">
-            Type <span className="rounded-[5px] bg-muted px-1.5 py-px font-mono">{name}</span> to
-            confirm
+          <label htmlFor="confirm-name" className="text-sm font-medium text-label">
+            Type{' '}
+            <span className="rounded-[5px] bg-muted px-1.5 py-0.5 font-mono text-foreground">
+              {name}
+            </span>{' '}
+            to confirm
           </label>
           <input
             id="confirm-name"
@@ -90,12 +93,12 @@ export function DangerPanel({
             onChange={(e) => setTyped(e.target.value)}
             autoComplete="off"
             spellCheck={false}
-            className="h-9 w-full max-w-[460px] rounded-lg border bg-background px-2.5 font-mono text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="h-10 w-full max-w-[460px] rounded-lg border bg-card px-3 font-mono text-[13px] text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
           />
           <span
             className={cn(
-              'text-xs',
-              matches ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground',
+              'text-[13px]',
+              matches ? 'text-red-700 dark:text-red-400' : 'text-muted-foreground',
             )}
           >
             {typed === ''
@@ -111,19 +114,17 @@ export function DangerPanel({
           </p>
         )}
       </div>
-      <div className="flex items-center gap-2 border-t border-red-200 bg-red-50/60 px-6 py-3.5 dark:border-red-950 dark:bg-red-950/25">
+      <div className="flex items-center gap-3 border-t border-red-100 bg-red-50 px-7 py-4 dark:border-red-950 dark:bg-red-950/25">
         <Button
-          className={cn(
-            'h-[34px]',
-            matches ? 'bg-red-700 text-white hover:bg-red-800' : 'bg-muted text-muted-foreground',
-          )}
+          variant={matches ? 'destructive' : 'secondary'}
+          className={cn('h-10', !matches && 'border border-border text-placeholder')}
           disabled={!matches || pending}
           onClick={remove}
         >
           <Trash2Icon />
           {pending ? 'Scheduling…' : 'Schedule deletion'}
         </Button>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[13px] text-muted-foreground">
           Enabled once the name matches exactly.
         </span>
       </div>

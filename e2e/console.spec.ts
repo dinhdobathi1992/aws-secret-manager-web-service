@@ -47,6 +47,22 @@ test.describe('list', () => {
     await expect(search).toHaveValue('')
   })
 
+  test('Cards / Table layout switch is remembered in this browser', async ({ page, context }) => {
+    await login(context, READER)
+    await page.goto('/a/dev-mock')
+    const layout = page.getByRole('group', { name: 'Layout' })
+    await expect(layout.getByRole('button', { name: 'Cards' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await expect(page.getByRole('article').first()).toBeVisible()
+    await layout.getByRole('button', { name: 'Table' }).click()
+    await expect(page.getByRole('table')).toBeVisible()
+    await page.reload()
+    await expect(page.getByRole('table')).toBeVisible()
+    await expect(page.getByRole('article')).toHaveCount(0)
+  })
+
   test('pages under /a are never cached', async ({ page, context }) => {
     await login(context, READER)
     const res = await page.goto('/a/dev-mock')
@@ -72,7 +88,7 @@ test.describe('reveal', () => {
     const res = await page.goto(secretPath(name))
     expect(await res!.text()).not.toContain(PLANTED)
 
-    await page.getByRole('button', { name: 'Reveal values' }).click()
+    await page.getByRole('button', { name: 'View secret', exact: true }).click()
     await expect(page.getByLabel('Value for password', { exact: true })).toHaveValue(PLANTED)
     expect(
       auditLines().some(
@@ -83,10 +99,80 @@ test.describe('reveal', () => {
     await page.clock.fastForward(31_000)
     await expect(page.getByText('Values are hidden')).toBeVisible()
 
-    await page.getByRole('button', { name: 'Reveal values' }).click()
+    await page.getByRole('button', { name: 'View secret', exact: true }).click()
     await expect(page.getByLabel('Value for password', { exact: true })).toBeVisible()
     await hidePage(page)
     await expect(page.getByText('Values are hidden')).toBeVisible()
+  })
+
+  test('quick view from a card: audited, counts down, hides, no edit for readers', async ({
+    page,
+    context,
+  }) => {
+    const name = await arrangeSecret({ user: 'u', password: PLANTED })
+    await login(context, READER, 'quickviewer')
+    await page.clock.install()
+    const res = await page.goto(`/a/dev-mock?q=${encodeURIComponent(name)}`)
+    expect(await res!.text()).not.toContain(PLANTED)
+    const card = page.getByRole('article').filter({ hasText: name.split('/')[1] })
+    await card.getByRole('button', { name: 'View secret' }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByText(`View secret: ${name}`)).toBeVisible()
+    await expect(dialog.getByText(PLANTED)).toBeVisible()
+    await expect(dialog.getByText(/Hides in/)).toBeVisible()
+    await expect(dialog.getByRole('link', { name: 'Edit secret' })).toHaveCount(0)
+    expect(
+      auditLines().some(
+        (l) =>
+          l.action === 'reveal' &&
+          l.secretName === name &&
+          l.outcome === 'ok' &&
+          (l.user as { upn?: string })?.upn === 'quickviewer@e2e.test',
+      ),
+    ).toBe(true)
+    await page.clock.fastForward(31_000)
+    await expect(dialog).toHaveCount(0)
+    await expect(page.getByText(PLANTED)).toHaveCount(0)
+  })
+
+  test('Edit secret from the quick view opens the editor with a fresh, audited view', async ({
+    page,
+    context,
+  }) => {
+    const name = await arrangeSecret({ k: 'v1' })
+    await login(context, WRITER, 'quickeditor')
+    await page.goto(`/a/dev-mock?q=${encodeURIComponent(name)}`)
+    const card = page.getByRole('article').filter({ hasText: name.split('/')[1] })
+    await card.getByRole('button', { name: 'View secret' }).click()
+    await page.getByRole('dialog').getByRole('link', { name: 'Edit secret' }).click()
+    await expect(page).toHaveURL(/edit=1/)
+    await expect(page.getByLabel('Value for k', { exact: true })).toHaveValue('v1')
+    const views = auditLines().filter(
+      (l) =>
+        l.action === 'reveal' &&
+        l.secretName === name &&
+        (l.user as { upn?: string })?.upn === 'quickeditor@e2e.test',
+    )
+    expect(views).toHaveLength(2)
+  })
+
+  test('a crafted ?edit=1 link never views on its own', async ({ page, context }) => {
+    const name = await arrangeSecret({ k: PLANTED })
+    await login(context, WRITER, 'linkclicker')
+    const res = await page.goto(`${secretPath(name)}?edit=1`)
+    expect(await res!.text()).not.toContain(PLANTED)
+    await expect(page.getByText('Values are hidden')).toBeVisible()
+    await expect(page).not.toHaveURL(/edit=1/)
+    await page.waitForTimeout(500)
+    await expect(page.getByText('Values are hidden')).toBeVisible()
+    expect(
+      auditLines().some(
+        (l) =>
+          l.action === 'reveal' &&
+          l.secretName === name &&
+          (l.user as { upn?: string })?.upn === 'linkclicker@e2e.test',
+      ),
+    ).toBe(false)
   })
 
   test('names with / + = @ open correctly', async ({ page, context }) => {
@@ -104,21 +190,44 @@ test.describe('writer', () => {
   test('create secret → lands on its detail page', async ({ page, context }) => {
     await login(context, WRITER)
     await page.goto('/a/dev-mock')
-    await page.getByRole('button', { name: 'New secret' }).click()
+    await page.getByRole('button', { name: 'Create secret' }).click()
     const name = `e2e/created/${Date.now()}`
     const dialog = page.getByRole('dialog')
-    await dialog.getByLabel('Name', { exact: true }).fill(name)
+    await dialog.getByLabel('Secret name', { exact: true }).fill(name)
     await dialog.getByLabel('Key', { exact: true }).fill('token')
     await dialog.getByLabel('Value for token', { exact: true }).fill(PLANTED)
     await dialog.getByRole('button', { name: 'Create secret' }).click()
     await expect(page.getByRole('heading', { name })).toBeVisible()
   })
 
+  test('create templates fill key names only; secret values are masked', async ({
+    page,
+    context,
+  }) => {
+    await login(context, WRITER)
+    await page.goto('/a/dev-mock')
+    await page.getByRole('button', { name: 'Create secret' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('button', { name: /RDS database/ }).click()
+    const keys = dialog.getByLabel('Key', { exact: true })
+    await expect(keys).toHaveCount(6)
+    await expect(keys.first()).toHaveValue('username')
+    await expect(dialog.getByLabel('Value for username', { exact: true })).toHaveValue('')
+    await expect(dialog.getByLabel('Value for password', { exact: true })).toHaveAttribute(
+      'type',
+      'password',
+    )
+    await expect(dialog.getByLabel('Value for host', { exact: true })).toHaveAttribute(
+      'type',
+      'text',
+    )
+  })
+
   test('update shows a key-only diff and saves a new version', async ({ page, context }) => {
     const name = await arrangeSecret({ host: 'db', port: '5432' })
     await login(context, WRITER)
     await page.goto(secretPath(name))
-    await page.getByRole('button', { name: 'Reveal values' }).click()
+    await page.getByRole('button', { name: 'View secret', exact: true }).click()
     await page.getByLabel('Value for port', { exact: true }).fill('6000')
     await page.getByRole('button', { name: 'Save new version' }).click()
     const dialog = page.getByRole('alertdialog')
@@ -138,7 +247,7 @@ test.describe('writer', () => {
     const [a, b] = [await ctxA.newPage(), await ctxB.newPage()]
     for (const p of [a, b]) {
       await p.goto(secretPath(name))
-      await p.getByRole('button', { name: 'Reveal values' }).click()
+      await p.getByRole('button', { name: 'View secret', exact: true }).click()
     }
     await a.getByLabel('Value for k', { exact: true }).fill('from-a')
     await a.getByRole('button', { name: 'Save new version' }).click()
@@ -148,7 +257,7 @@ test.describe('writer', () => {
     await b.getByLabel('Value for k', { exact: true }).fill('from-b')
     await b.getByRole('button', { name: 'Save new version' }).click()
     await b.getByRole('alertdialog').getByRole('button', { name: 'Save version' }).click()
-    await expect(b.getByText('The secret changed since you revealed it.')).toBeVisible()
+    await expect(b.getByText('The secret changed since you opened it.')).toBeVisible()
     await Promise.all([ctxA.close(), ctxB.close()])
   })
 
@@ -212,7 +321,7 @@ test.describe('reader limits', () => {
     await page.goto(secretPath(name))
     await expect(page.getByRole('link', { name: 'Danger zone' })).toHaveCount(0)
     await page.goto('/a/dev-mock')
-    await expect(page.getByRole('button', { name: 'New secret' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Create secret' })).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Activity' })).toHaveCount(0)
 
     // Call deleteSecret directly, the way a crafted request would.
@@ -260,7 +369,7 @@ test.describe('value safety', () => {
     const name = await arrangeSecret(PLANTED, [`${PLANTED}-v2`])
     await login(context, ADMIN, 'plain')
     await page.goto(secretPath(name))
-    await page.getByRole('button', { name: 'Reveal values' }).click()
+    await page.getByRole('button', { name: 'View secret', exact: true }).click()
     const value = page.getByLabel('Secret value', { exact: true })
     await expect(value).toHaveValue(`${PLANTED}-v2`)
     await value.fill(`${PLANTED}-v3`)
@@ -270,7 +379,7 @@ test.describe('value safety', () => {
 
     await page.goto(secretPath(name, 'versions'))
     const previous = page.getByRole('row').filter({ hasText: 'AWSPREVIOUS' })
-    await previous.getByRole('button', { name: 'Reveal' }).click()
+    await previous.getByRole('button', { name: 'View', exact: true }).click()
     await expect(page.getByLabel('Version value')).toHaveValue(`${PLANTED}-v2`)
     await page.keyboard.press('Escape')
     await previous.getByRole('button', { name: 'Compare keys' }).click()
@@ -290,7 +399,7 @@ test.describe('value safety', () => {
     await login(context, WRITER)
     await page.clock.install()
     await page.goto(secretPath(name))
-    await page.getByRole('button', { name: 'Reveal values' }).click()
+    await page.getByRole('button', { name: 'View secret', exact: true }).click()
     await page.getByRole('button', { name: 'Add key' }).click() // blank key: not yet a valid draft
     await page.clock.fastForward(31_000)
     await expect(page.getByLabel('Value for k', { exact: true })).toBeVisible()

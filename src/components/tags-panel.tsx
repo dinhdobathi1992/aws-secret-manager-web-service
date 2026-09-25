@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { BadgeTag } from './badge-tag'
 
 const input =
-  'h-[34px] w-full rounded-lg border bg-background px-2.5 font-mono text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring/50 read-only:border-transparent read-only:bg-transparent read-only:px-0'
+  'h-10 w-full rounded-lg border bg-card px-3 font-mono text-[13px] text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 read-only:border-transparent read-only:bg-transparent read-only:px-0'
 
 export function TagsPanel({
   accountId,
@@ -46,15 +46,15 @@ export function TagsPanel({
       router.refresh()
     })
 
-  const grid = 'grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_72px] items-center gap-2'
+  const grid = 'grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_80px] items-center gap-2.5'
   return (
-    <div className="flex flex-wrap items-start gap-6">
-      <section aria-label="Tags" className="w-full max-w-[760px] overflow-hidden rounded-xl border bg-card">
-        <div className="flex flex-col gap-2 p-4">
+    <div className="flex flex-wrap items-start gap-7">
+      <section aria-label="Tags" className="surface w-full max-w-[760px] overflow-hidden">
+        <div className="flex flex-col gap-2.5 px-6 py-5">
           <div
             className={cn(
               grid,
-              'text-[11px] font-semibold tracking-[.06em] text-muted-foreground uppercase',
+              'text-xs font-semibold tracking-[.04em] text-muted-foreground uppercase',
             )}
           >
             <span>Key</span>
@@ -86,7 +86,7 @@ export function TagsPanel({
                   {canEdit && (
                     <Button
                       variant="ghost"
-                      size="icon-sm"
+                      size="icon"
                       aria-label={`Remove tag ${r.key}`}
                       title={`Remove tag ${r.key}`}
                       onClick={() => setRows(rows.filter((x) => x.id !== r.id))}
@@ -101,12 +101,7 @@ export function TagsPanel({
           })}
           {canEdit && (
             <div className="mt-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-dashed bg-transparent text-muted-foreground"
-                onClick={() => setRows([...rows, newTagRow()])}
-              >
+              <Button variant="dashed" size="sm" onClick={() => setRows([...rows, newTagRow()])}>
                 <PlusIcon />
                 Add tag
               </Button>
@@ -119,11 +114,9 @@ export function TagsPanel({
           )}
         </div>
         {canEdit && (
-          <div className="flex items-center gap-2 border-t bg-sunken px-4 py-3">
-            <span
-              className={cn('size-[7px] rounded-full', dirty ? 'bg-amber-500' : 'bg-zinc-500')}
-            />
-            <span className="text-[13px] text-muted-foreground">
+          <div className="flex items-center gap-2.5 border-t bg-sunken px-6 py-4">
+            <span className={cn('size-2 rounded-full', dirty ? 'bg-amber-500' : 'bg-zinc-400')} />
+            <span className="text-sm text-muted-foreground">
               {!change.ok
                 ? change.error
                 : changes
@@ -132,9 +125,7 @@ export function TagsPanel({
             </span>
             <div className="flex-1" />
             <Button
-              variant="outline"
-              size="sm"
-              className="h-8"
+              variant="secondary"
               disabled={!dirty || pending}
               onClick={() => {
                 setRows(initial())
@@ -143,18 +134,13 @@ export function TagsPanel({
             >
               Discard
             </Button>
-            <Button
-              size="sm"
-              className="h-8 px-3.5"
-              disabled={!dirty || pending || !change.ok}
-              onClick={save}
-            >
+            <Button variant="success" disabled={!dirty || pending || !change.ok} onClick={save}>
               {pending ? 'Saving…' : 'Save tags'}
             </Button>
           </div>
         )}
       </section>
-      <aside className="flex max-w-[360px] flex-col gap-2.5 text-[13px] text-muted-foreground">
+      <aside className="flex max-w-[360px] flex-col gap-3 text-sm text-muted-foreground">
         <p className="flex gap-2">
           <InfoIcon className="mt-0.5 size-4 shrink-0" />
           <span>

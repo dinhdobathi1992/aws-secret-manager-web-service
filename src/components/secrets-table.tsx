@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { CopyButton } from './copy-button'
 
 export const DOT: Record<Freshness, string> = {
-  week: 'bg-green-500',
+  week: 'bg-green-600',
   quarter: 'bg-amber-500',
   stale: 'bg-zinc-500',
 }
@@ -27,11 +27,11 @@ export function TagChip({ k, v }: { k: string; v: string }) {
   return (
     <span
       className={cn(
-        'inline-flex h-[22px] items-center gap-[5px] rounded-md px-2 font-mono text-xs whitespace-nowrap',
+        'inline-flex h-6 items-center gap-[5px] rounded-full px-[9px] text-xs whitespace-nowrap',
         tagColor(k),
       )}
     >
-      <span className="opacity-70">{k}</span>
+      <span className="opacity-75">{k}</span>
       <span className="font-semibold">{v}</span>
     </span>
   )
@@ -118,10 +118,10 @@ export function SecretsTable({
   now: number
 }) {
   const th =
-    'h-10 px-4 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase'
+    'h-11 px-5 text-left text-xs font-semibold tracking-[.04em] text-muted-foreground uppercase'
   return (
     <table className="w-full border-collapse">
-      <thead className="border-b bg-muted/40">
+      <thead className="border-b bg-sunken">
         <tr>
           <th className={th}>
             <SortHeader label="Name" sortKey="name" sort={sort} dir={dir} hrefFor={hrefFor} />
@@ -148,7 +148,7 @@ export function SecretsTable({
           return (
             <tr
               key={s.name}
-              className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/40"
+              className="border-b border-[#eef0f3] transition-colors last:border-0 hover:bg-sunken dark:border-border"
             >
               <td className="py-3.5 pr-4 pl-5">
                 <NameCell accountId={accountId} name={s.name} description={s.description} />
@@ -158,13 +158,14 @@ export function SecretsTable({
                   {tags.length ? (
                     tags.map(([k, v]) => <TagChip key={k} k={k} v={v} />)
                   ) : (
-                    <span className="text-xs text-muted-foreground/70">No tags</span>
+                    <span className="text-xs text-muted-foreground">No tags</span>
                   )}
                 </div>
               </td>
               <td className="px-4">
                 <div className="flex items-start gap-2">
                   <span
+                    role="img"
                     title={FRESHNESS_LABEL[f]}
                     aria-label={FRESHNESS_LABEL[f]}
                     className={cn('mt-1.5 size-2 shrink-0 rounded-full', DOT[f])}

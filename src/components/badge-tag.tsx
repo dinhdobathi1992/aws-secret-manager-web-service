@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 export type Tone = 'neutral' | 'green' | 'blue' | 'amber' | 'red' | 'violet' | 'teal'
 
 const TONE: Record<Tone, string> = {
-  neutral: 'bg-zinc-200 text-zinc-700 dark:bg-neutral-800 dark:text-neutral-300',
+  neutral: 'bg-gray-100 text-gray-700 dark:bg-neutral-800 dark:text-neutral-300',
   green: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300',
   blue: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
   amber: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
@@ -27,7 +27,7 @@ export function BadgeTag({
   return (
     <span
       className={cn(
-        'inline-flex h-5 shrink-0 items-center rounded-[5px] px-[7px] text-[11px] font-semibold tracking-[.03em] uppercase',
+        'inline-flex h-5 shrink-0 items-center rounded-md px-[7px] text-[11px] font-semibold tracking-[.02em] whitespace-nowrap uppercase',
         mono && 'font-mono',
         TONE[tone],
         className,

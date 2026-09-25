@@ -7,10 +7,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { LayoutSwitch } from './list-layout'
 
 type TagOption = { k: string; v: string }
 
-/** Toolbar at the top of the secrets card: search (`/`), active tag filter, tag picker, clear. */
+/** Secrets toolbar: search (`/`), active tag filter, tag picker, clear, Cards / Table switch. */
 export function ListToolbar({ tagOptions }: { tagOptions: TagOption[] }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -65,9 +66,9 @@ export function ListToolbar({ tagOptions }: { tagOptions: TagOption[] }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
-      <label className="flex h-[34px] w-[360px] items-center gap-2 rounded-lg border bg-background pr-2 pl-2.5 text-muted-foreground focus-within:ring-2 focus-within:ring-ring/50">
-        <SearchIcon className="size-[15px] shrink-0" />
+    <div className="flex flex-wrap items-center gap-2.5">
+      <label className="flex h-[42px] w-[380px] max-w-full items-center gap-2.5 rounded-lg border bg-card pr-2.5 pl-3.5 text-placeholder focus-within:ring-2 focus-within:ring-ring/40">
+        <SearchIcon className="size-4 shrink-0" />
         <input
           ref={inputRef}
           type="search"
@@ -75,21 +76,20 @@ export function ListToolbar({ tagOptions }: { tagOptions: TagOption[] }) {
           onChange={(e) => onSearch(e.target.value)}
           aria-label="Search secrets by name"
           placeholder="Search by name prefix"
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none"
         />
-        <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] border px-[5px] font-mono text-[11px]">
+        <kbd className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-[5px] border bg-sunken px-1.5 font-mono text-xs text-muted-foreground">
           /
         </kbd>
       </label>
-      <span className="mx-1 h-5 w-px bg-border" />
       {active && (
-        <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-primary pr-1 pl-2.5 font-mono text-xs text-primary-foreground">
-          <span className="opacity-65">{active.k}</span>
+        <span className="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary-subtle-border bg-primary-subtle pr-1.5 pl-3 text-[13px] text-accent-foreground">
+          <span className="opacity-75">{active.k}</span>
           {active.v && <span className="font-semibold">{active.v}</span>}
           <Link
             href={hrefWith({ tk: null, tv: null })}
             aria-label={`Remove filter ${active.k}: ${active.v}`}
-            className="inline-flex size-5 items-center justify-center rounded-full bg-primary-foreground/80 text-primary"
+            className="inline-flex size-[22px] items-center justify-center rounded-full bg-primary-subtle-border text-accent-foreground"
           >
             <XIcon className="size-3" />
           </Link>
@@ -100,7 +100,7 @@ export function ListToolbar({ tagOptions }: { tagOptions: TagOption[] }) {
         onApply={(k, v) => router.push(hrefWith({ tk: k, tv: v || null }))}
       />
       {(active || params.get('q')) && (
-        <Button asChild variant="ghost" size="sm" className="h-7 text-muted-foreground">
+        <Button asChild variant="ghost" size="sm" className="h-8">
           <Link
             href={hrefWith({ q: null, tk: null, tv: null })}
             onClick={() => {
@@ -112,6 +112,8 @@ export function ListToolbar({ tagOptions }: { tagOptions: TagOption[] }) {
           </Link>
         </Button>
       )}
+      <div className="flex-1" />
+      <LayoutSwitch />
     </div>
   )
 }
@@ -133,11 +135,7 @@ function TagFilterPopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 border-dashed bg-transparent text-muted-foreground"
-        >
+        <Button size="sm" variant="dashed" className="h-8">
           <PlusIcon />
           Tag filter
         </Button>

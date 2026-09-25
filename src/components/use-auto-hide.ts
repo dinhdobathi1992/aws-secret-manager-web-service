@@ -11,6 +11,11 @@ export const AUTO_HIDE_MS = 30_000
 export function useAutoHide(active: boolean, hide: () => void) {
   useEffect(() => {
     if (!active) return
+    // Arrived while the tab is already hidden (e.g. opened in a background tab): hide at once.
+    if (document.visibilityState === 'hidden') {
+      hide()
+      return
+    }
     const timer = setTimeout(hide, AUTO_HIDE_MS)
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') hide()

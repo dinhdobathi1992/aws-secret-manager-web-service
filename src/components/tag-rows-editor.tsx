@@ -27,7 +27,7 @@ export function TagRowsEditor({
             value={r.key}
             readOnly={readOnly}
             onChange={(e) => update(r.id, { key: e.target.value })}
-            className="font-mono"
+            className="h-10 font-mono text-[13px]"
           />
           <Input
             aria-label={`Value for tag ${r.key || 'new'}`}
@@ -35,7 +35,7 @@ export function TagRowsEditor({
             value={r.value}
             readOnly={readOnly}
             onChange={(e) => update(r.id, { value: e.target.value })}
-            className="font-mono"
+            className="h-10 font-mono text-[13px]"
           />
           {!readOnly && (
             <Button
@@ -54,7 +54,7 @@ export function TagRowsEditor({
         <div>
           <Button
             type="button"
-            variant="outline"
+            variant="dashed"
             size="sm"
             onClick={() => onChange([...rows, newTagRow()])}
           >

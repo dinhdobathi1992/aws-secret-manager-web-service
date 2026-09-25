@@ -92,7 +92,7 @@ export function VersionsPanel({
       setCompare({ versionId, diff: keyDiff(before, after) })
     })
 
-  const doReveal = (versionId: string) =>
+  const doView = (versionId: string) =>
     startTransition(async () => {
       const res = await getVersionValue({ ...target, versionId })
       if (!res.ok) return void toast.error(res.message)
@@ -143,12 +143,12 @@ export function VersionsPanel({
     })
 
   const th =
-    'h-10 px-4 text-left text-[11px] font-semibold tracking-[.06em] text-muted-foreground uppercase'
+    'h-11 px-6 text-left text-xs font-semibold tracking-[.04em] text-muted-foreground uppercase'
   return (
     <div className="flex flex-col gap-5">
-      <section aria-label="Versions" className="overflow-hidden rounded-xl border bg-card">
-        <table className="w-full border-collapse text-[13px]">
-          <thead className="bg-sunken">
+      <section aria-label="Versions" className="surface overflow-hidden">
+        <table className="w-full border-collapse text-sm">
+          <thead className="border-b bg-sunken">
             <tr>
               <th className={cn(th, 'w-[260px]')}>Version</th>
               <th className={cn(th, 'w-[260px]')}>Stages</th>
@@ -160,33 +160,38 @@ export function VersionsPanel({
             {versions.map((v) => {
               const isCurrent = v.versionId === currentVersionId
               return (
-                <tr key={v.versionId} className="h-14 border-t hover:bg-muted/30">
-                  <td className="px-4 font-mono font-semibold" title={v.versionId}>
+                <tr
+                  key={v.versionId}
+                  className="h-16 border-t border-[#f1f2f5] first:border-t-0 hover:bg-sunken dark:border-border"
+                >
+                  <td className="px-6 font-mono font-semibold text-foreground" title={v.versionId}>
                     {shortVersion(v.versionId)}
                   </td>
-                  <td className="px-4">
+                  <td className="px-6">
                     <div className="flex gap-1.5">
                       {v.stages.length ? (
                         v.stages.map((s) => <Stage key={s} s={s} />)
                       ) : (
-                        <span className="text-xs text-muted-foreground">deprecated</span>
+                        <span className="text-[13px] text-muted-foreground">deprecated</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-4">
+                  <td className="px-6">
                     <div className="flex flex-col">
-                      <span className="font-medium">{relativeTime(v.createdDate)}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {relativeTime(v.createdDate)}
+                      </span>
+                      <span className="text-[13px] text-muted-foreground">
                         {absoluteDate(v.createdDate, true)} UTC
                       </span>
                     </div>
                   </td>
-                  <td className="px-4">
+                  <td className="px-6">
                     <div className="flex justify-end gap-2">
                       {!isCurrent && (
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="secondary"
                           disabled={pending}
                           onClick={() => doCompare(v.versionId)}
                         >
@@ -196,17 +201,17 @@ export function VersionsPanel({
                       )}
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="secondary"
                         disabled={pending}
-                        onClick={() => doReveal(v.versionId)}
+                        onClick={() => doView(v.versionId)}
                       >
                         <EyeIcon />
-                        Reveal
+                        View
                       </Button>
                       {canRollback && !isCurrent && (
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="secondary"
                           disabled={pending}
                           onClick={() => openRollback(v.versionId)}
                         >
@@ -221,19 +226,19 @@ export function VersionsPanel({
           </tbody>
         </table>
         {versions.length === 1 && (
-          <div className="flex items-center gap-2.5 border-t bg-sunken px-4 py-3.5 text-[13px] text-muted-foreground">
+          <div className="flex items-center gap-2.5 border-t bg-sunken px-6 py-4 text-sm text-muted-foreground">
             <InfoIcon className="size-4 shrink-0" />
             <span>
               This is the only version. After the next save, the previous version appears here with{' '}
-              <strong className="font-medium text-foreground">Compare keys</strong> and{' '}
-              <strong className="font-medium text-foreground">Make current</strong> (admin).
+              <strong className="font-medium text-label">Compare keys</strong> and{' '}
+              <strong className="font-medium text-label">Make current</strong> (admin).
             </span>
           </div>
         )}
       </section>
 
       {compare && (
-        <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+        <div className="surface flex flex-col gap-3 p-5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold">
               Compare <span className="font-mono">{shortVersion(compare.versionId)}</span> → current
@@ -253,14 +258,15 @@ export function VersionsPanel({
               Version <span className="font-mono">{shortVersion(shown?.versionId)}</span>
             </DialogTitle>
             <DialogDescription>
-              This reveal was audited. The dialog closes after 30 seconds.
+              This view was recorded in CloudTrail. The dialog closes after 30 seconds or when you
+              leave the tab.
             </DialogDescription>
           </DialogHeader>
           <Textarea
             aria-label="Version value"
             readOnly
             value={shown?.value ?? ''}
-            className="min-h-48 bg-muted/40 font-mono text-[13px]"
+            className="min-h-48 border-0 bg-code-bg font-mono text-[13px] text-code-fg"
           />
         </DialogContent>
       </Dialog>

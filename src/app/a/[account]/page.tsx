@@ -1,14 +1,16 @@
 import { LockIcon } from 'lucide-react'
+import { AccountPicker } from '@/components/account-picker'
 import { AwsErrorState } from '@/components/aws-error-state'
 import { CreateSecretDialog } from '@/components/create-secret-dialog'
+import { ListLayoutProvider, LayoutView } from '@/components/list-layout'
 import { ListToolbar } from '@/components/list-toolbar'
 import { Pager } from '@/components/pager'
-import { DOT, SecretsTable, type SortKey } from '@/components/secrets-table'
+import { SecretCards } from '@/components/secret-cards'
+import { SecretsTable, type SortKey } from '@/components/secrets-table'
 import { can } from '@/lib/auth/rbac'
 import { listSecrets, type SecretSummary } from '@/lib/aws/secrets'
-import { load, pageContext } from '@/lib/data/page-data'
-import { FRESHNESS_SHORT, PAGE_SIZES, type Freshness, requestTime } from '@/lib/ui/format'
-import { cn } from '@/lib/utils'
+import { accountOptions, load, pageContext } from '@/lib/data/page-data'
+import { PAGE_SIZES, requestTime } from '@/lib/ui/format'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,74 +92,74 @@ export default async function SecretsPage({
   }
   const now = requestTime()
 
+  const canEdit = can(auth.role, 'update')
+  const filtered = !!(sp.q || sp.tk)
+  const count = `${items.length}${result.ok && result.data.nextToken ? '+' : ''}`
+
   return (
     <>
-      <div className="flex items-end justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-[-0.01em]">Secrets</h1>
-          <p className="text-[13px] text-muted-foreground">
-            {auth.account.name} · {auth.account.region}
+      <AccountPicker accounts={accountOptions(auth)} currentId={auth.account.id} />
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-3xl font-semibold text-foreground">Secrets</h1>
+          <p className="text-[15px] text-muted-foreground">
+            {result.ok
+              ? `${count} ${filtered ? 'matching ' : ''}${items.length === 1 && !result.data.nextToken ? 'secret' : 'secrets'} in ${auth.account.name} · ${auth.account.region}`
+              : `${auth.account.name} · ${auth.account.region}`}
           </p>
         </div>
         {can(auth.role, 'create') && (
           <CreateSecretDialog accountId={auth.account.id} accountName={auth.account.name} />
         )}
       </div>
-      <section className="overflow-hidden rounded-xl border bg-card shadow-[0_1px_2px_rgba(0,0,0,.06),0_8px_24px_-12px_rgba(0,0,0,.18)] dark:shadow-[0_1px_2px_rgba(0,0,0,.3),0_8px_24px_-12px_rgba(0,0,0,.5)]">
+      <ListLayoutProvider>
+        <h2 className="sr-only">Secrets list</h2>
         <ListToolbar tagOptions={tagOptions} />
         {!result.ok ? (
-          <div className="p-4">
-            <AwsErrorState code={result.code} />
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold">
-                  {sp.q || sp.tk ? 'Matching secrets' : 'All secrets'}
-                </h2>
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-semibold">
-                  {items.length}
-                  {result.data.nextToken ? '+' : ''}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span>Last changed:</span>
-                {(Object.keys(FRESHNESS_SHORT) as Freshness[]).map((f) => (
-                  <span key={f} className="inline-flex items-center gap-1.5">
-                    <span className={cn('size-[7px] rounded-full', DOT[f])} />
-                    {FRESHNESS_SHORT[f]}
-                  </span>
-                ))}
-              </div>
-            </div>
-            {items.length ? (
-              <SecretsTable
+          <AwsErrorState code={result.code} />
+        ) : items.length ? (
+          <LayoutView
+            cards={
+              <SecretCards
                 accountId={auth.account.id}
                 items={items}
-                sort={sort}
-                dir={dir}
-                hrefFor={hrefFor}
                 now={now}
+                upn={auth.user.upn}
+                canEdit={canEdit}
               />
-            ) : (
-              <div className="flex flex-col items-center gap-1 border-t px-5 py-16 text-center">
-                <span className="font-medium">No secrets found</span>
-                <span className="text-sm text-muted-foreground">
-                  {sp.q || sp.tk
-                    ? 'Try a different name prefix or tag.'
-                    : 'This account has no secrets yet.'}
-                </span>
-              </div>
-            )}
-            <Pager shown={items.length} size={size} nextToken={result.data.nextToken} />
-          </>
+            }
+            table={
+              <section className="surface overflow-hidden">
+                <SecretsTable
+                  accountId={auth.account.id}
+                  items={items}
+                  sort={sort}
+                  dir={dir}
+                  hrefFor={hrefFor}
+                  now={now}
+                />
+              </section>
+            }
+          />
+        ) : (
+          <div className="surface flex flex-col items-center gap-1 px-5 py-16 text-center">
+            <span className="font-medium text-foreground">No secrets found</span>
+            <span className="text-sm text-muted-foreground">
+              {filtered
+                ? 'Try a different name prefix or tag.'
+                : 'This account has no secrets yet.'}
+            </span>
+          </div>
         )}
-      </section>
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        {result.ok && (
+          <div className="surface">
+            <Pager shown={items.length} size={size} nextToken={result.data.nextToken} />
+          </div>
+        )}
+      </ListLayoutProvider>
+      <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
         <LockIcon className="size-3.5" />
-        Values and key names stay hidden until you open a secret and reveal it. Every reveal is
-        recorded.
+        Values stay hidden until you view them, and every view is recorded.
       </p>
     </>
   )

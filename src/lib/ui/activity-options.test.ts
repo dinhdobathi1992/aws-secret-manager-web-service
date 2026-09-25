@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { ActivityEvent } from '@/lib/aws/activity'
-import { activityWindow, matchesText, matchesType, parseActivityType } from './activity-options'
+import {
+  activityWindow,
+  groupActivity,
+  matchesText,
+  matchesType,
+  parseActivityType,
+} from './activity-options'
 
 const filterActivity = (
   events: ActivityEvent[],
@@ -75,5 +81,72 @@ describe('parseActivityType', () => {
   it('defaults unknown values to changes', () => {
     expect(parseActivityType('xyz')).toBe('changes')
     expect(parseActivityType('failed')).toBe('failed')
+  })
+})
+
+describe('groupActivity', () => {
+  const ev = (id: string, time: string, extra: Partial<ActivityEvent> = {}): ActivityEvent => ({
+    id,
+    time,
+    eventName: 'GetSecretValue',
+    label: 'View',
+    kind: 'reveal',
+    who: 'ann@example.com',
+    viaApp: true,
+    secretName: 'team/db',
+    ...extra,
+  })
+
+  it('collapses consecutive repeats in the same minute', () => {
+    const days = groupActivity([
+      ev('a', '2026-09-24T17:59:40Z'),
+      ev('b', '2026-09-24T17:59:10Z'),
+      ev('c', '2026-09-24T17:59:01Z'),
+    ])
+    expect(days).toHaveLength(1)
+    expect(days[0].total).toBe(3)
+    expect(days[0].rows).toEqual([{ e: expect.objectContaining({ id: 'a' }), count: 3 }])
+  })
+
+  it('keeps rows apart across minutes, users, secrets, actions and results', () => {
+    const days = groupActivity([
+      ev('a', '2026-09-24T17:59:40Z'),
+      ev('b', '2026-09-24T17:58:59Z'),
+      ev('c', '2026-09-24T17:58:30Z', { who: 'bob@example.com' }),
+      ev('d', '2026-09-24T17:58:20Z', { who: 'bob@example.com', secretName: 'other' }),
+      ev('e', '2026-09-24T17:58:10Z', {
+        who: 'bob@example.com',
+        secretName: 'other',
+        eventName: 'PutSecretValue',
+      }),
+      ev('f', '2026-09-24T17:58:05Z', {
+        who: 'bob@example.com',
+        secretName: 'other',
+        eventName: 'PutSecretValue',
+        errorCode: 'AccessDenied',
+      }),
+    ])
+    expect(days[0].rows.map((r) => r.count)).toEqual([1, 1, 1, 1, 1, 1])
+  })
+
+  it('never collapses a repeat that is not consecutive', () => {
+    const days = groupActivity([
+      ev('a', '2026-09-24T17:59:40Z'),
+      ev('b', '2026-09-24T17:59:30Z', { who: 'bob@example.com' }),
+      ev('c', '2026-09-24T17:59:20Z'),
+    ])
+    expect(days[0].rows).toHaveLength(3)
+  })
+
+  it('starts a new day header at UTC midnight and counts events per day', () => {
+    const days = groupActivity([
+      ev('a', '2026-09-25T00:00:10Z'),
+      ev('b', '2026-09-24T23:59:50Z'),
+      ev('c', '2026-09-24T23:59:40Z'),
+    ])
+    expect(days.map((d) => [d.day, d.total, d.rows.length])).toEqual([
+      ['Friday, Sep 25, 2026', 1, 1],
+      ['Thursday, Sep 24, 2026', 2, 1],
+    ])
   })
 })

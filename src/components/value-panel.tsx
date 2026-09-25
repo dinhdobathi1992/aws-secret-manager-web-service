@@ -2,7 +2,7 @@
 
 import { ClockIcon, EyeIcon, EyeOffIcon, LockIcon, RefreshCwIcon, XIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useMemo, useState, useTransition } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -17,6 +17,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { revealSecret, updateSecretValue } from '@/lib/actions/secrets'
+import { copyWithClear } from '@/lib/ui/clipboard'
+import { takeEditIntent } from '@/lib/ui/edit-intent'
 import { hasChanges, keyDiff, type KeyDiff } from '@/lib/ui/key-diff'
 import {
   diffEntries,
@@ -30,23 +32,9 @@ import { SaveSummary } from './key-diff-list'
 import { entriesFrom, rowsFrom, type KvRow } from '@/lib/ui/editor-model'
 import { KvEditor } from './kv-editor'
 import { useAutoHide } from './use-auto-hide'
-
-const CLIPBOARD_CLEAR_MS = 30_000
+import { useCountdown } from './use-countdown'
 
 type Revealed = { versionId?: string; original: ValueModel }
-
-/** Best-effort: overwrite the clipboard later. Depends on browser permission; not a control. */
-export async function copyWithClear(value: string) {
-  try {
-    await navigator.clipboard.writeText(value)
-    toast.success('Copied. The clipboard is cleared in 30s where the browser allows it.')
-    setTimeout(() => {
-      navigator.clipboard.writeText('').catch(() => {})
-    }, CLIPBOARD_CLEAR_MS)
-  } catch {
-    toast.error('Clipboard access was blocked by the browser.')
-  }
-}
 
 /**
  * The value tab. Nothing is fetched until Reveal (an audited server action). Values stay in
@@ -58,10 +46,16 @@ export function ValuePanel({
   name,
   canEdit,
   upn,
+  autoView,
 }: {
   accountId: string
   name: string
   canEdit: boolean
+  /**
+   * `?edit=1` from the quick view's "Edit secret". The (audited) view runs on load only if that
+   * click left a one-time intent in this tab, so a crafted link, refresh or Back never views.
+   */
+  autoView?: boolean
   /** Shown in the hidden state: who the reveal will be recorded as. */
   upn: string
 }) {
@@ -130,6 +124,7 @@ export function ValuePanel({
   // `edited` (not `dirty`): a half-typed row with a blank key isn't a valid draft yet, but it is
   // still work the user would lose.
   useAutoHide(!!revealed && !(canEdit && edited), hide)
+  const left = useCountdown(!!revealed && !(canEdit && edited), revealed)
 
   const reveal = () =>
     startTransition(async () => {
@@ -138,6 +133,17 @@ export function ValuePanel({
       if (!res.ok) return setError(res.message)
       load({ versionId: res.data.versionId, original: toModel(res.data.value, res.data.kind) })
     })
+
+  // One view on arrival from "Edit secret", then drop `edit=1` from the URL.
+  const autoViewed = useRef(false)
+  useEffect(() => {
+    if (!autoView || autoViewed.current) return
+    autoViewed.current = true
+    const intended = canEdit && takeEditIntent(accountId, name)
+    router.replace(window.location.pathname, { scroll: false })
+    if (intended) reveal()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on mount
+  }, [])
 
   const switchMode = (next: 'kv' | 'raw') => {
     if (next === mode || !revealed || revealed.original.kind !== 'kv') return
@@ -183,7 +189,7 @@ export function ValuePanel({
       setConfirm(null)
       if (!res.ok) {
         if (res.code === 'Conflict') {
-          toast.error('The secret changed since you revealed it.', {
+          toast.error('The secret changed since you opened it.', {
             description: 'Your edits were not saved.',
             action: {
               label: 'Reload',
@@ -205,18 +211,16 @@ export function ValuePanel({
 
   if (!revealed) {
     return (
-      <section
-        aria-label="Value"
-        className="flex items-center gap-4 rounded-xl border bg-card px-6 py-5"
-      >
-        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-muted">
-          <LockIcon className="size-[18px]" />
+      <section aria-label="Value" className="surface flex items-center gap-[18px] px-7 py-6">
+        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary-subtle text-primary">
+          <LockIcon className="size-[22px]" />
         </span>
         <div className="flex flex-1 flex-col gap-1">
-          <h2 className="text-[15px] font-semibold">Values are hidden</h2>
-          <p className="text-[13px] text-muted-foreground">
-            Revealing is recorded in CloudTrail as <span className="text-foreground">{upn}</span>.
-            Values hide again after 30 seconds or when you leave the tab.
+          <h2 className="text-[17px] font-semibold text-foreground">Values are hidden</h2>
+          <p className="text-sm text-muted-foreground">
+            Viewing is recorded in CloudTrail as{' '}
+            <strong className="font-medium text-label">{upn}</strong>. Values hide again after 30
+            seconds or when you leave the tab.
           </p>
           {error && (
             <p role="alert" className="text-sm text-destructive">
@@ -224,9 +228,9 @@ export function ValuePanel({
             </p>
           )}
         </div>
-        <Button onClick={reveal} disabled={pending} className="h-9 px-3.5">
+        <Button size="lg" onClick={reveal} disabled={pending}>
           <EyeIcon />
-          {pending ? 'Revealing…' : 'Reveal values'}
+          {pending ? 'Opening…' : 'View secret'}
         </Button>
       </section>
     )
@@ -257,18 +261,20 @@ export function ValuePanel({
   })()
   const segment = (on: boolean) =>
     cn(
-      'h-7 rounded-md px-3 text-[13px] font-medium',
-      on ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
+      'h-8 rounded-md px-3 text-[13px] font-medium',
+      on
+        ? 'bg-card text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]'
+        : 'text-muted-foreground hover:text-foreground',
     )
 
   return (
-    <section aria-label="Value" className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center gap-3 border-b px-4 py-2.5">
+    <section aria-label="Value" className="surface overflow-hidden">
+      <div className="flex items-center gap-3 border-b px-6 py-3.5">
         {kind === 'kv' ? (
           <div
             role="group"
             aria-label="View as"
-            className="flex gap-0.5 rounded-lg border bg-background p-0.5"
+            className="flex gap-0.5 rounded-lg bg-[#eceef3] p-[3px] dark:bg-muted"
           >
             <button
               type="button"
@@ -299,18 +305,22 @@ export function ValuePanel({
         <div className="flex-1" />
         <span
           className={cn(
-            'inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-xs font-medium',
+            'inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium',
             paused
               ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
               : 'bg-muted text-muted-foreground',
           )}
         >
           <ClockIcon className="size-3.5" />
-          {paused
-            ? 'Auto-hide paused while you have unsaved changes'
-            : 'Hides in 30s or when you leave the tab'}
+          {paused ? (
+            'Auto-hide paused while you have unsaved changes'
+          ) : (
+            <span>
+              Hides in <strong className="tabular">{left}s</strong> or when you leave the tab
+            </span>
+          )}
         </span>
-        <Button size="sm" variant="outline" className="h-8" onClick={hide}>
+        <Button variant="secondary" className="h-9" onClick={hide}>
           <EyeOffIcon />
           Hide
         </Button>
@@ -329,7 +339,7 @@ export function ValuePanel({
           lockedIds={lockedIds}
         />
       ) : (
-        <div className="p-4">
+        <div className="px-6 py-4">
           <Textarea
             aria-label="Secret value"
             value={
@@ -355,35 +365,22 @@ export function ValuePanel({
       )}
 
       {error && (
-        <p role="alert" className="border-t px-4 py-2.5 text-sm text-destructive">
+        <p role="alert" className="border-t px-6 py-2.5 text-sm text-destructive">
           {error}
         </p>
       )}
 
-      {!readOnly && (
-        <div className="flex items-center gap-2 border-t bg-sunken px-4 py-3">
-          <span
-            className={cn(
-              'size-[7px] shrink-0 rounded-full',
-              dirty ? 'bg-amber-500' : 'bg-zinc-500',
-            )}
-          />
-          <span className="text-[13px] text-muted-foreground">
-            {summary
-              ? `${summary} Saving creates a new version; the current one becomes AWSPREVIOUS.`
-              : 'No unsaved changes. If someone saves first, you’ll be asked to reload.'}
+      {!readOnly && dirty && (
+        <div className="flex items-center gap-2.5 border-t bg-sunken px-6 py-4">
+          <span className="size-2 shrink-0 rounded-full bg-amber-500" />
+          <span className="text-sm text-muted-foreground">
+            {summary} Saving creates a new version; the current one becomes AWSPREVIOUS.
           </span>
           <div className="flex-1" />
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8"
-            disabled={!dirty}
-            onClick={() => load(revealed)}
-          >
+          <Button variant="secondary" onClick={() => load(revealed)}>
             Discard
           </Button>
-          <Button size="sm" className="h-8 px-3.5" disabled={!dirty || pending} onClick={askSave}>
+          <Button variant="success" disabled={pending} onClick={askSave}>
             Save new version…
           </Button>
         </div>
@@ -415,13 +412,13 @@ export function ValuePanel({
             </p>
             <p className="flex items-center gap-2">
               <RefreshCwIcon className="size-3.5" />
-              If someone changed the secret since you revealed it, the save stops and asks you to
+              If someone changed the secret since you opened it, the save stops and asks you to
               reload.
             </p>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={save} disabled={pending}>
+            <AlertDialogAction variant="success" onClick={save} disabled={pending}>
               Save version
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -33,7 +33,7 @@ export function Pager({
   }
 
   return (
-    <div className="flex items-center justify-between border-t px-4 py-3 text-[13px] text-muted-foreground">
+    <div className="flex items-center justify-between px-5 py-3 text-[13px] text-muted-foreground">
       <span>
         Showing <strong className="text-foreground">{shown}</strong>{' '}
         {shown === 1 ? 'secret' : 'secrets'}
@@ -45,7 +45,7 @@ export function Pager({
           <select
             value={size}
             onChange={(e) => router.push(href({ size: e.target.value, cursor: null }))}
-            className="h-[30px] rounded-[7px] border bg-card px-2 text-[13px] text-foreground"
+            className="h-[34px] rounded-lg border bg-card px-2 text-[13px] text-foreground"
           >
             {PAGE_SIZES.map((s) => (
               <option key={s} value={s}>

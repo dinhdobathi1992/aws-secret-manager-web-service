@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 
 /**
  * Copies non-secret text (names, ids, ARNs). Secret values use the value panel's own copy.
- * With `children`, renders a labelled outline button; otherwise an icon button.
+ * With `children`, renders a labelled secondary button; otherwise an icon button.
  */
 export function CopyButton({
   text,
@@ -30,7 +30,7 @@ export function CopyButton({
   const icon = done ? <CheckIcon /> : <CopyIcon />
   if (children) {
     return (
-      <Button variant="outline" size="sm" className="h-8" aria-label={label} onClick={copy}>
+      <Button variant="secondary" aria-label={label} onClick={copy}>
         {icon}
         {children}
       </Button>

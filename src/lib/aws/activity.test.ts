@@ -36,7 +36,7 @@ describe('toActivityEvent', () => {
   it('names the real person, detects the app, and strips the ARN suffix', () => {
     const a = toActivityEvent(event({}), ROLE)!
     expect(a).toMatchObject({
-      label: 'Reveal',
+      label: 'View',
       kind: 'reveal',
       who: 'thi@example.com',
       viaApp: true,

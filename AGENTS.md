@@ -29,6 +29,7 @@ Next.js 16 console for AWS Secrets Manager across accounts: Entra ID sign-in, pe
 - Server-only modules import `'server-only'`. Never export non-component constants from `'use client'` files for server use (they become client references).
 - All mutations and value reads go through `withAction` in `src/lib/actions/`; pages only render metadata.
 - Role checks come from `ACTION_MIN_ROLE` (`src/lib/auth/rbac.ts`); add new actions there first (session policies derive from it).
+- UI follows `docs/design-contract.md`: tokens in `src/app/globals.css`, cards use the `surface` utility, buttons use the `Button` variants (`default` indigo, `success`, `secondary`, `outline`, `text`, `dashed`, `destructive`).
 
 ## Gotchas
 
@@ -38,6 +39,8 @@ Next.js 16 console for AWS Secrets Manager across accounts: Entra ID sign-in, pe
 - No env-derived values in `next.config.ts` (standalone freezes them at build time).
 - Don't cache anything under `/a/*` (force-dynamic + no-store).
 - moto ≠ AWS: `DeletedDate` semantics differ, IAM/KMS/session policies are unenforced, CloudTrail `LookupEvents` is unimplemented. See README "Known gaps".
+- The UI says **View**, but the action id and audit value stay `reveal`. Don't rename them: log pipelines and tests depend on them.
+- Fonts are self-hosted via `@fontsource-variable/*` imported in `globals.css`. Never add a Google Fonts link: the CSP blocks it.
 - Port 5000 on macOS is AirPlay; moto uses 5055 (dev/integration) and 5058 (e2e).
 - `.env`: no quotes (docker `--env-file` keeps them), no `$` (compose expands it).
 - A file named `credentials.*` is blocked by a local privacy hook; the AWS credentials module is `src/lib/aws/assume-role.ts`.

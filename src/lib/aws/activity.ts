@@ -23,9 +23,9 @@ export type ActivityEvent = {
 }
 
 const LABELS: Record<string, { label: string; kind: ActivityKind }> = {
-  GetSecretValue: { label: 'Reveal', kind: 'reveal' },
-  // Per-secret GetSecretValue events are the reveals; the batch call itself is bookkeeping.
-  BatchGetSecretValue: { label: 'Reveal (batch)', kind: 'read' },
+  GetSecretValue: { label: 'View', kind: 'reveal' },
+  // Per-secret GetSecretValue events are the views; the batch call itself is bookkeeping.
+  BatchGetSecretValue: { label: 'View (batch)', kind: 'read' },
   CreateSecret: { label: 'Create', kind: 'change' },
   PutSecretValue: { label: 'Update value', kind: 'change' },
   UpdateSecret: { label: 'Update', kind: 'change' },
