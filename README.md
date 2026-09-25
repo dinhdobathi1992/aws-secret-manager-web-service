@@ -1,8 +1,16 @@
 # Secrets Console
 
+[![Watch the 2-minute intro](docs/media/secrets-console-intro-poster.png)](docs/media/secrets-console-intro.mp4)
+
+<sub>2-minute intro with English narration and English + Vietnamese captions. Click to play.</sub>
+
+**One place for security teams to manage secrets across every AWS account, and a least-privilege
+way for developers to work with secrets without AWS console access.**
+
 A web console for AWS Secrets Manager across several AWS accounts. People sign in with Entra ID
 (Azure AD). Their role in each account comes from Entra group membership: **reader**, **writer**
-or **admin**. Every action is audited. The app never stores or logs secret values.
+or **admin**, and every AWS call runs in a short session scoped to that role. Every action is
+audited. The app never stores or logs secret values.
 
 Built with Next.js 16 (App Router), TypeScript, shadcn/ui, and the AWS SDK v3. It ships as one
 container, deployed with the Helm chart in `helm/aws-secrets-manager`.
@@ -108,6 +116,14 @@ Screenshots come from the e2e mock (moto, fake seeded data, admin persona):
 
 The Activity page isn't pictured: moto doesn't implement CloudTrail `LookupEvents`, and a real
 account's events would show real people and resources.
+
+## Intro video
+
+The video is generated from code with [HyperFrames](https://github.com/heygen-com/hyperframes) in
+`video/secrets-console-intro/`. The narration and captions are in `script.json`. To rebuild:
+`python3 tools/voiceover.py && python3 tools/build.py && npx -y hyperframes@0.7.99 render .`
+(the voice-over uses Gemini Flash TTS when a key is set, otherwise local Kokoro). Copy the output
+to `docs/media/` after compressing it for the repo.
 
 ## Deploy
 

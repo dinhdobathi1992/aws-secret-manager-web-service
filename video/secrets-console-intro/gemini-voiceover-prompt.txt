@@ -1,0 +1,29 @@
+GEMINI FLASH TTS PROMPT (Google AI Studio -> Generate speech, model: Gemini 2.5 Flash TTS,
+single speaker, voice: Charon; alternatives: Kore, Puck). Paste everything between the lines.
+-----------------------------------------------------------------------------------------------
+Read this as a calm, confident product-launch narrator for an internal developer tool.
+Warm, clear, medium pace, no hype. Pause about one second between paragraphs.
+
+Your team keeps hundreds of secrets across many AWS accounts. Sharing them safely shouldn't be hard.
+
+Meet Secrets Console: one web console for AWS Secrets Manager, across every account. Sign in with Microsoft Entra ID, and you only see the accounts where you have a role.
+
+Access follows your Entra groups: reader, writer, or admin, per account. AWS enforces it too, with a scoped session for every role.
+
+Find any secret fast. Search by name, filter by tag, and switch between cards and a table.
+
+Need a value? View it in one click. Every view is recorded in CloudTrail under your name, and values hide again after thirty seconds.
+
+Create secrets from templates for RDS, DocumentDB, and Redshift. Only key names are filled in, and passwords stay masked.
+
+Edit with confidence. Changed and new keys are highlighted. The save dialog lists key names only, never values. And if someone saved first, you are asked to reload.
+
+Every save is a new version. Compare keys, and make an older version current again in one step.
+
+Deleting is deliberate. Admins type the full name to confirm, and there is still a thirty-day recovery window.
+
+Admins also get an activity view straight from CloudTrail: who viewed or changed what, including changes made outside the app.
+
+Secret values never reach logs or the page. It ships as one container with a Helm chart. Secrets Console. Safe secrets, for the whole team.
+-----------------------------------------------------------------------------------------------
+Download the result as WAV and save it as video/secrets-console-intro/assets/narration.wav.
