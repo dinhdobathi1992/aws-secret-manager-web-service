@@ -7,6 +7,8 @@ or **admin**. Every action is audited. The app never stores or logs secret value
 Built with Next.js 16 (App Router), TypeScript, shadcn/ui, and the AWS SDK v3. It ships as one
 container, deployed with the Helm chart in `helm/aws-secrets-manager`.
 
+![Secrets list](docs/screenshots/list.png)
+
 ## What it does
 
 |                                                                                      | reader | writer | admin |
@@ -90,7 +92,20 @@ Full gate: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration &&
 
 ## Design
 
-UI/UX contract (tokens, screens, role visibility, behaviour rules): `docs/design-contract.md`.
+Dark by default, with a light theme toggle in the header. The UI/UX contract (tokens, screens,
+role visibility, behaviour rules) is `docs/design-contract.md`.
+
+Screenshots come from `pnpm dev:mock` (moto, fake seeded data, admin persona):
+
+|                                                                                                                           |                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| ![Secret detail with values hidden](docs/screenshots/value-hidden.png) Detail: metadata tiles, values hidden until Reveal | ![Editing a key/value secret](docs/screenshots/value-editing.png) Editing: existing keys locked, CHANGED / NEW badges, auto-hide paused |
+| ![Save confirmation](docs/screenshots/save-confirm.png) Save: key names only, never values                                | ![Versions](docs/screenshots/versions.png) Versions: compare keys, reveal, make current                                                 |
+| ![Tags](docs/screenshots/tags.png) Tags: unsaved-change count                                                             | ![Danger zone](docs/screenshots/danger.png) Danger zone (admin): 30-day recovery, typed-name confirm                                    |
+| ![Secrets list, light theme](docs/screenshots/list-light.png) Light theme                                                 |                                                                                                                                         |
+
+The Activity page isn't pictured: moto doesn't implement CloudTrail `LookupEvents`, and a real
+account's events would show real people and resources.
 
 ## Deploy
 

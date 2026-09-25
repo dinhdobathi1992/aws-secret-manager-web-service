@@ -95,12 +95,13 @@ builds don't contain it.
   - search box ("Search by name prefix", `/` hint), filtered on the server;
   - the active tag filter as a pill with ✕;
   - a dashed **+ Tag filter** button, whose popover suggests the tags in view or takes a key and optional value;
-  - **Clear**, when any filter is active.
+  - **Clear**, when any filter is active: drops the search and tag filter, keeps page size and
+    sort, and cancels a pending search so it can't bring the filters back.
 - Table card:
   - Header row: "All secrets" or "Matching secrets", a count badge, and the freshness legend.
-  - **Name:** a 34 px coloured prefix tile (first two letters of the top-level segment), the path
+  - **Name:** a 32 px coloured prefix tile (first two letters of the top-level segment), the path
     muted plus the **last segment bold**, and the description on a second line.
-  - **Tags:** rounded chips, key lighter and value bold. "No tags" when empty.
+  - **Tags:** tinted rectangular chips (5 px radius), key lighter and value bold. "No tags" when empty.
   - **Last changed:** a freshness dot, the relative time in bold, and the absolute date below.
   - **Actions:** copy name, open (chevron).
   - Sortable headers (Name, Last changed) sort within the current page.
@@ -181,26 +182,22 @@ Table: name, description, **Requested**, **Deletes on (about)** (the request dat
 ### 4.6 Activity (`/a/[account]/activity`, admin only)
 
 - Header: "Activity" with an admin badge, and "Secrets Manager events … from AWS CloudTrail … includes changes made outside this app".
-- **Tiles:**
-  - Events;
-  - Reveals, with the number of people;
-  - Changes;
-  - Failed, meaning rejected by AWS.
-
-  The tiles describe the loaded window ("N events loaded, DATE – DATE").
-
-- **Filters:**
-  - chips: **Changes & reveals** (default, hides list/describe), Reveals only, Failed, All
-    incl. list/describe;
-  - **User** and **Secret name** search, applied instantly in the browser;
-  - range: 24 h / 7 d / 30 d / 90 d.
-- **Table:** time (relative + UTC), who (initials avatar, UPN, "via Secrets Console" or "via AWS
+- Header right: **Range** select (24 h / 7 d / 30 d / 90 d; a new range starts from the newest
+  events) and **Newest**.
+- **Filter tiles** (links, one active): **Changes & reveals** (default, hides list/describe),
+  **Reveals** (with the number of people), **Changes** (create, update, tags, delete, restore),
+  **Failed** (rejected by AWS), **All events** (including list/describe).
+  A caption above the tiles states the scope: counts cover only the events loaded so far; a `+`
+  after a count means older events exist and are not counted yet.
+- **Search:** user and secret name, applied instantly in the browser over the loaded events;
+  "Showing X of N loaded events".
+- **Table:** a header row per UTC day; time as HH:MM UTC, who (initials avatar, UPN, "via Secrets Console" or "via AWS
   console / CLI"), colour-coded action, secret (link), result (green Success or red error
   code).
-- **Expandable row:** AWS event, request id, version, role session, source IP, and the note that
-  values are never in CloudTrail.
-- **Footer:** blocked in-app attempts are only in the app's audit log. **Newest** / **Load
-  older events** (a cursor with the pinned time window).
+- **Expandable row:** a five-column grid (AWS event, request id, version, role session, source
+  IP) and the note that values are never in CloudTrail.
+- **Footer:** blocked in-app attempts are only in the app's audit log. **Load older events**
+  (a cursor with the pinned time window).
 
 ### 4.7 States
 
