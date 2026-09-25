@@ -1,8 +1,9 @@
 # Secrets Console
 
-[![Watch the 2-minute intro](docs/media/secrets-console-intro-poster.png)](docs/media/secrets-console-intro.mp4)
+https://github.com/user-attachments/assets/2f697982-e157-4272-8d49-0950a97aec79
 
-<sub>2-minute intro with English narration and English + Vietnamese captions. Click to play.</sub>
+<sub>2-minute intro with English narration and English + Vietnamese captions. Also in
+[`docs/media/secrets-console-intro.mp4`](docs/media/secrets-console-intro.mp4).</sub>
 
 **One place for security teams to manage secrets across every AWS account, and a least-privilege
 way for developers to work with secrets without AWS console access.**
