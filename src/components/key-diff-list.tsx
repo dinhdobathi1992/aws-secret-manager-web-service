@@ -1,4 +1,5 @@
 import type { KeyDiff } from '@/lib/ui/key-diff'
+import { BadgeTag } from './badge-tag'
 
 const ROWS = [
   {
@@ -48,6 +49,44 @@ export function KeyDiffList({ diff, showSame }: { diff: KeyDiff; showSame?: bool
             <span className="font-mono">{k}</span>
           </div>
         ))}
+    </div>
+  )
+}
+
+const GROUPS = [
+  { key: 'changed', label: 'changed', tone: 'amber' },
+  { key: 'added', label: 'added', tone: 'green' },
+  { key: 'removed', label: 'removed', tone: 'red' },
+] as const
+
+/** Save-confirmation box: each non-empty change group with its key names, empties summarised. */
+export function SaveSummary({ diff }: { diff: KeyDiff }) {
+  const present = GROUPS.filter((g) => diff[g.key].length)
+  const empty = GROUPS.filter((g) => !diff[g.key].length)
+  return (
+    <div className="overflow-hidden rounded-[10px] border">
+      {present.map((g, i) => (
+        <div key={g.key} className={i > 0 ? 'border-t' : undefined}>
+          <div className="flex items-center gap-2 border-b bg-sunken px-3 py-2.5">
+            <BadgeTag tone={g.tone}>{g.label}</BadgeTag>
+            <span className="text-xs text-muted-foreground">
+              {diff[g.key].length} {diff[g.key].length === 1 ? 'key' : 'keys'}
+            </span>
+          </div>
+          <div className="flex flex-col gap-1 px-3 py-2.5 font-mono text-[13px]">
+            {diff[g.key].map((k) => (
+              <span key={k}>{k}</span>
+            ))}
+          </div>
+        </div>
+      ))}
+      {empty.length > 0 && (
+        <div className="flex items-center gap-4 border-t px-3 py-2.5 text-xs text-muted-foreground">
+          {empty.map((g) => (
+            <span key={g.key}>{g.label[0].toUpperCase() + g.label.slice(1)}: none</span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -32,9 +32,13 @@ export function UserMenu({ name, upn }: { name: string; upn: string }) {
       <form ref={formRef} action="/api/auth/logout" method="post" className="hidden" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" aria-label="User menu" className="h-9 gap-2 px-2">
-            <span className="inline-flex size-7 items-center justify-center rounded-full bg-muted text-[11px] font-semibold">
-              {initials(name)}
+          <Button
+            variant="ghost"
+            aria-label="User menu"
+            className="h-8 gap-2 pr-2 pl-1 text-[13px]"
+          >
+            <span className="inline-flex size-6 items-center justify-center rounded-full bg-muted text-[11px] font-semibold">
+              {initials(name).slice(0, 1)}
             </span>
             <span className="max-w-40 truncate text-sm">{name}</span>
             <ChevronDownIcon className="text-muted-foreground" />

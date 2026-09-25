@@ -1,15 +1,9 @@
 'use client'
 
-import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { PAGE_SIZES } from '@/lib/ui/format'
 
 /**
@@ -39,30 +33,28 @@ export function Pager({
   }
 
   return (
-    <div className="flex items-center justify-between border-t bg-muted/30 px-5 py-3 text-[13px]">
-      <span className="text-muted-foreground">
+    <div className="flex items-center justify-between border-t px-4 py-3 text-[13px] text-muted-foreground">
+      <span>
         Showing <strong className="text-foreground">{shown}</strong>{' '}
         {shown === 1 ? 'secret' : 'secrets'}
         {nextToken ? ' on this page' : ''}
       </span>
-      <div className="flex items-center gap-3">
-        <span className="text-muted-foreground">Rows per page</span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              {size}
-              <ChevronDownIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2">
+          Rows per page
+          <select
+            value={size}
+            onChange={(e) => router.push(href({ size: e.target.value, cursor: null }))}
+            className="h-[30px] rounded-[7px] border bg-card px-2 text-[13px] text-foreground"
+          >
             {PAGE_SIZES.map((s) => (
-              <DropdownMenuItem key={s} asChild>
-                <Link href={href({ size: String(s), cursor: null })}>{s}</Link>
-              </DropdownMenuItem>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <span className="h-5 w-px bg-border" />
+          </select>
+        </label>
+        <span className="mx-1 h-5 w-px bg-border" />
         <Button variant="outline" size="sm" disabled={!hasPrev} onClick={() => router.back()}>
           <ChevronLeftIcon />
           Previous

@@ -31,7 +31,11 @@ export function AccountSwitcher({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" aria-label="Switch account" className="h-9 gap-2 px-2.5">
+        <Button
+          variant="outline"
+          aria-label="Switch account"
+          className="h-8 gap-2 bg-transparent pr-2 pl-2.5 text-[13px]"
+        >
           <span className="font-medium">{current.name}</span>
           <span className="font-mono text-xs text-muted-foreground">{current.shortId}</span>
           <RoleBadge role={current.role} />

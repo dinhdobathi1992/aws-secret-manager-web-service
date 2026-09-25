@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
-/** Search box (`/` focuses it) and tag filter chips. State lives in the URL. */
 type TagOption = { k: string; v: string }
 
+/** Toolbar at the top of the secrets card: search (`/`), active tag filter, tag picker, clear. */
 export function ListToolbar({ tagOptions }: { tagOptions: TagOption[] }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -19,7 +19,6 @@ export function ListToolbar({ tagOptions }: { tagOptions: TagOption[] }) {
   const [q, setQ] = useState(params.get('q') ?? '')
   const activeKey = params.get('tk')
   const active: TagOption | null = activeKey ? { k: activeKey, v: params.get('tv') ?? '' } : null
-  const same = (a: TagOption, b: TagOption | null) => !!b && a.k === b.k && a.v === b.v
 
   const hrefWith = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(params)
@@ -47,81 +46,128 @@ export function ListToolbar({ tagOptions }: { tagOptions: TagOption[] }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Debounced server-side search (ListSecrets name filter).
-  useEffect(() => {
-    if ((params.get('q') ?? '') === q) return
-    const t = setTimeout(() => router.replace(hrefWith({ q: q.trim() || null })), 300)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to typing
-  }, [q])
+  // Debounced server-side search (ListSecrets name filter). The timer lives in the input handler,
+  // not an effect, so Clear can cancel it and a pending search can't restore cleared filters.
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(timer.current), [])
+  const onSearch = (value: string) => {
+    setQ(value)
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => router.replace(hrefWith({ q: value.trim() || null })), 300)
+  }
 
-  const chips = [...(active ? [active] : []), ...tagOptions.filter((t) => !same(t, active))].slice(
-    0,
-    6,
-  )
-  const label = (t: TagOption) => (t.v ? `${t.k}:${t.v}` : t.k)
+  // Follow the URL when it changes elsewhere (Clear, back/forward), without undoing typing.
+  const urlQ = params.get('q') ?? ''
+  const [seenUrlQ, setSeenUrlQ] = useState(urlQ)
+  if (urlQ !== seenUrlQ) {
+    setSeenUrlQ(urlQ)
+    if (q.trim() !== urlQ) setQ(urlQ)
+  }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <label className="relative flex w-[420px] items-center">
-        <SearchIcon className="pointer-events-none absolute left-3 size-4 text-muted-foreground" />
-        <Input
+    <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
+      <label className="flex h-[34px] w-[360px] items-center gap-2 rounded-lg border bg-background pr-2 pl-2.5 text-muted-foreground focus-within:ring-2 focus-within:ring-ring/50">
+        <SearchIcon className="size-[15px] shrink-0" />
+        <input
           ref={inputRef}
+          type="search"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => onSearch(e.target.value)}
           aria-label="Search secrets by name"
           placeholder="Search by name prefix"
-          className="h-9 bg-card pr-10 pl-9"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
         />
-        <kbd className="pointer-events-none absolute right-2.5 inline-flex h-5 min-w-5 items-center justify-center rounded border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
+        <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] border px-[5px] font-mono text-[11px]">
           /
         </kbd>
       </label>
-      {chips.length > 0 && <span className="text-[13px] text-muted-foreground">Tags</span>}
-      {chips.map((t) =>
-        same(t, active) ? (
-          <Button key={label(t)} size="sm" asChild>
-            <Link
-              href={hrefWith({ tk: null, tv: null })}
-              aria-label={`Remove tag filter ${label(t)}`}
-            >
-              <span className="font-mono">{label(t)}</span>
-              <XIcon />
-            </Link>
-          </Button>
-        ) : (
-          <Button key={label(t)} size="sm" variant="outline" asChild>
-            <Link href={hrefWith({ tk: t.k, tv: t.v || null })} className="font-mono">
-              {label(t)}
-            </Link>
-          </Button>
-        ),
+      <span className="mx-1 h-5 w-px bg-border" />
+      {active && (
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-primary pr-1 pl-2.5 font-mono text-xs text-primary-foreground">
+          <span className="opacity-65">{active.k}</span>
+          {active.v && <span className="font-semibold">{active.v}</span>}
+          <Link
+            href={hrefWith({ tk: null, tv: null })}
+            aria-label={`Remove filter ${active.k}: ${active.v}`}
+            className="inline-flex size-5 items-center justify-center rounded-full bg-primary-foreground/80 text-primary"
+          >
+            <XIcon className="size-3" />
+          </Link>
+        </span>
       )}
-      <TagFilterPopover onApply={(k, v) => router.push(hrefWith({ tk: k, tv: v || null }))} />
+      <TagFilterPopover
+        options={tagOptions}
+        onApply={(k, v) => router.push(hrefWith({ tk: k, tv: v || null }))}
+      />
+      {(active || params.get('q')) && (
+        <Button asChild variant="ghost" size="sm" className="h-7 text-muted-foreground">
+          <Link
+            href={hrefWith({ q: null, tk: null, tv: null })}
+            onClick={() => {
+              clearTimeout(timer.current)
+              setQ('')
+            }}
+          >
+            Clear
+          </Link>
+        </Button>
+      )}
     </div>
   )
 }
 
-function TagFilterPopover({ onApply }: { onApply: (key: string, value: string) => void }) {
+function TagFilterPopover({
+  options,
+  onApply,
+}: {
+  options: TagOption[]
+  onApply: (key: string, value: string) => void
+}) {
   const [open, setOpen] = useState(false)
   const [key, setKey] = useState('')
   const [value, setValue] = useState('')
+  const apply = (k: string, v: string) => {
+    onApply(k, v)
+    setOpen(false)
+  }
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="ghost">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 border-dashed bg-transparent text-muted-foreground"
+        >
           <PlusIcon />
           Tag filter
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72">
+        {options.length > 0 && (
+          <div className="mb-3 flex flex-col gap-1.5">
+            <span className="text-[11px] font-semibold tracking-[.06em] text-muted-foreground uppercase">
+              Tags in view
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {options.map((t) => (
+                <button
+                  key={`${t.k}=${t.v}`}
+                  type="button"
+                  onClick={() => apply(t.k, t.v)}
+                  className="inline-flex h-6 items-center gap-1 rounded-md bg-muted px-2 font-mono text-xs hover:bg-muted/70"
+                >
+                  <span className="opacity-70">{t.k}</span>
+                  <span className="font-semibold">{t.v}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <form
           className="flex flex-col gap-2"
           onSubmit={(e) => {
             e.preventDefault()
-            if (!key.trim()) return
-            onApply(key.trim(), value)
-            setOpen(false)
+            if (key.trim()) apply(key.trim(), value)
           }}
         >
           <Input

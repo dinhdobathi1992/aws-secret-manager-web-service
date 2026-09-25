@@ -9,9 +9,10 @@ export const ACTIVITY_RANGES = [
 
 export const ACTIVITY_TYPES = [
   { id: 'changes', label: 'Changes & reveals' },
-  { id: 'reveals', label: 'Reveals only' },
+  { id: 'reveals', label: 'Reveals' },
+  { id: 'writes', label: 'Changes' },
   { id: 'failed', label: 'Failed' },
-  { id: 'all', label: 'All incl. list/describe' },
+  { id: 'all', label: 'All events' },
 ] as const
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number]['id']
@@ -23,6 +24,7 @@ export function parseActivityType(v: string | undefined): ActivityType {
 /** Event-type filter. Applied on the server, where it also decides how many pages to fetch. */
 export function matchesType(e: ActivityEvent, type: ActivityType): boolean {
   if (type === 'reveals') return e.kind === 'reveal'
+  if (type === 'writes') return e.kind === 'change'
   if (type === 'failed') return !!e.errorCode
   if (type === 'changes') return e.kind !== 'read'
   return true

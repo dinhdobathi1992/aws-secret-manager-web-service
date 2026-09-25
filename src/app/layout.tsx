@@ -22,7 +22,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       className={`${GeistSans.variable} ${GeistMono.variable} font-sans`}
     >
       <body className="min-h-screen antialiased">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem nonce={nonce}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem nonce={nonce}>
           <TooltipProvider>
             {children}
             <Toaster position="bottom-right" />

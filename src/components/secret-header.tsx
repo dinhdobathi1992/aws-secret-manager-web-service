@@ -1,15 +1,16 @@
-import { ChevronLeftIcon, ClockIcon, LayersIcon, ShieldCheckIcon } from 'lucide-react'
+import {
+  ChevronLeftIcon,
+  EyeIcon,
+  LayersIcon,
+  PencilLineIcon,
+  ShieldCheckIcon,
+  TriangleAlertIcon,
+} from 'lucide-react'
 import Link from 'next/link'
 import type { SecretMeta } from '@/lib/aws/secrets'
-import {
-  absoluteDate,
-  isRecent,
-  relativeTime,
-  secretHref,
-  shortVersion,
-  requestTime,
-} from '@/lib/ui/format'
+import { absoluteDate, isRecent, relativeTime, secretHref, shortVersion } from '@/lib/ui/format'
 import { cn } from '@/lib/utils'
+import { BadgeTag } from './badge-tag'
 import { CopyButton } from './copy-button'
 
 export type Tab = 'value' | 'versions' | 'tags' | 'danger'
@@ -20,20 +21,19 @@ function MetaTile({
   label,
   children,
   sub,
+  first,
 }: {
   icon: React.ReactNode
   tint: string
   label: string
   children: React.ReactNode
   sub: React.ReactNode
+  first?: boolean
 }) {
   return (
-    <div className="flex items-start gap-3.5 px-5 py-4">
+    <div className={cn('flex min-w-0 gap-3 px-5 py-4', !first && 'border-l')}>
       <span
-        className={cn(
-          'inline-flex size-9 shrink-0 items-center justify-center rounded-[9px]',
-          tint,
-        )}
+        className={cn('inline-flex size-8 shrink-0 items-center justify-center rounded-lg', tint)}
       >
         {icon}
       </span>
@@ -41,8 +41,8 @@ function MetaTile({
         <span className="text-[11px] font-semibold tracking-[.06em] text-muted-foreground uppercase">
           {label}
         </span>
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
-        <span className="text-xs text-muted-foreground">{sub}</span>
+        <div className="flex min-h-6 items-center gap-2 text-[15px] font-semibold">{children}</div>
+        <div className="truncate text-xs text-muted-foreground">{sub}</div>
       </div>
     </div>
   )
@@ -61,45 +61,77 @@ export function SecretHeader({
   accountId,
   meta,
   versionCount,
+  valueChangedAt,
   tab,
   showDanger,
+  now,
 }: {
   accountId: string
   meta: SecretMeta
   versionCount: number
+  /** Creation time of the AWSCURRENT version, i.e. when the value last changed. */
+  valueChangedAt?: string
   tab: Tab
   showDanger: boolean
+  now: number
 }) {
   const enc = encryption(meta.kmsKeyId)
-  const now = requestTime()
-  const tabs: [Tab, string][] = [
-    ['value', 'Value'],
-    ['versions', 'Versions'],
-    ['tags', 'Tags'],
-    ...(showDanger ? ([['danger', 'Danger zone']] as [Tab, string][]) : []),
-  ]
-  const divider = <span className="my-3 w-px self-stretch bg-border" />
+  const tagCount = Object.keys(meta.tags).length
+  const changed = valueChangedAt ?? meta.lastChangedDate
+  const count = (n: number) => (
+    <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-muted px-[5px] text-[11px] font-semibold text-muted-foreground">
+      {n}
+    </span>
+  )
+  const tabClass = (on: boolean, danger = false) =>
+    cn(
+      '-mb-px inline-flex h-10 items-center gap-1.5 border-b-2 text-sm font-medium',
+      danger
+        ? on
+          ? 'border-red-600 text-red-700 dark:border-red-400 dark:text-red-300'
+          : 'border-transparent text-red-700 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'
+        : on
+          ? 'border-foreground text-foreground'
+          : 'border-transparent text-muted-foreground hover:text-foreground',
+    )
 
   return (
-    <>
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[13px]">
+    <div className="flex flex-col">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex h-5 items-center gap-1.5 text-[13px] text-muted-foreground"
+      >
         <Link
           href={`/a/${encodeURIComponent(accountId)}`}
-          className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 hover:text-foreground"
         >
           <ChevronLeftIcon className="size-3.5" />
           Secrets
         </Link>
-        <span className="text-muted-foreground">/</span>
-        <span className="font-mono">{meta.name}</span>
+        <span>/</span>
+        <span className="font-mono text-foreground">{meta.name}</span>
       </nav>
-      <div className="flex flex-col gap-1.5">
-        <h1 className="font-mono text-2xl font-semibold break-all">{meta.name}</h1>
-        {meta.description && <p className="text-sm text-muted-foreground">{meta.description}</p>}
+      <div className="mt-3 flex items-end justify-between gap-6">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="font-mono text-2xl leading-8 font-semibold tracking-[-0.01em] break-all">
+            {meta.name}
+          </h1>
+          {meta.description && <p className="text-sm text-muted-foreground">{meta.description}</p>}
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <CopyButton text={meta.name} label="Copy secret name">
+            Copy name
+          </CopyButton>
+          <CopyButton text={meta.arn} label="Copy secret ARN">
+            Copy ARN
+          </CopyButton>
+        </div>
       </div>
-      <div className="grid grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)_1px_minmax(0,1fr)] rounded-xl border bg-card">
+
+      <div className="mt-5 grid grid-cols-4 rounded-xl border bg-card">
         <MetaTile
-          icon={<LayersIcon className="size-[18px]" />}
+          first
+          icon={<LayersIcon className="size-4" />}
           tint="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
           label="Current version"
           sub={
@@ -107,74 +139,86 @@ export function SecretHeader({
               {versionCount} {versionCount === 1 ? 'version' : 'versions'} retained ·{' '}
               <Link
                 href={secretHref(accountId, meta.name, 'versions')}
-                className="font-medium text-blue-700 hover:underline dark:text-blue-400"
+                className="text-blue-700 hover:underline dark:text-blue-300"
               >
                 View history
               </Link>
             </>
           }
         >
-          <span className="font-mono text-base font-semibold" title={meta.currentVersionId}>
+          <span className="font-mono" title={meta.currentVersionId}>
             {shortVersion(meta.currentVersionId)}
           </span>
-          <span className="inline-flex h-5 items-center rounded-[5px] bg-green-100 px-1.5 font-mono text-[11px] font-semibold text-green-800 dark:bg-green-950 dark:text-green-300">
+          <BadgeTag tone="green" mono>
             AWSCURRENT
-          </span>
+          </BadgeTag>
           {meta.currentVersionId && (
             <CopyButton text={meta.currentVersionId} label="Copy version id" />
           )}
         </MetaTile>
-        {divider}
         <MetaTile
-          icon={<ClockIcon className="size-[18px]" />}
+          icon={<PencilLineIcon className="size-4" />}
           tint="bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
-          label="Last changed"
-          sub={
-            <>
-              {absoluteDate(meta.lastChangedDate, true)} UTC
-              {meta.lastAccessedDate && (
-                <> · last read {relativeTime(meta.lastAccessedDate, now)}</>
-              )}
-            </>
-          }
+          label="Value changed"
+          sub={`${absoluteDate(changed, true)} UTC`}
         >
-          <span className="text-base font-semibold">{relativeTime(meta.lastChangedDate, now)}</span>
-          {isRecent(meta.lastChangedDate, now) && (
-            <span className="inline-flex h-5 items-center rounded-full bg-blue-100 px-2 text-[11px] font-semibold tracking-wide text-blue-800 uppercase dark:bg-blue-950 dark:text-blue-300">
-              recent
-            </span>
-          )}
+          <span>{relativeTime(changed, now)}</span>
+          {isRecent(changed, now) && <BadgeTag tone="blue">recent</BadgeTag>}
         </MetaTile>
-        {divider}
         <MetaTile
-          icon={<ShieldCheckIcon className="size-[18px]" />}
+          icon={<EyeIcon className="size-4" />}
+          tint="bg-muted text-foreground/80"
+          label="Last accessed"
+          sub="AWS records access by day, not time"
+        >
+          <span>{meta.lastAccessedDate ? absoluteDate(meta.lastAccessedDate) : 'Never'}</span>
+        </MetaTile>
+        <MetaTile
+          icon={<ShieldCheckIcon className="size-4" />}
           tint="bg-muted text-foreground/80"
           label="Encryption"
           sub={<span className="font-mono">{enc.detail}</span>}
         >
-          <span className="text-base font-semibold">{enc.label}</span>
-          <span className="inline-flex h-5 items-center rounded-full bg-muted px-2 text-[11px] font-semibold tracking-wide uppercase">
-            {enc.badge}
-          </span>
+          <span>{enc.label}</span>
+          <BadgeTag>{enc.badge}</BadgeTag>
         </MetaTile>
       </div>
-      <nav aria-label="Secret sections" className="flex border-b">
-        {tabs.map(([id, label]) => (
+
+      <nav aria-label="Secret sections" className="mt-6 flex h-[41px] items-end gap-6 border-b">
+        <Link
+          href={secretHref(accountId, meta.name)}
+          className={tabClass(tab === 'value')}
+          aria-current={tab === 'value' ? 'page' : undefined}
+        >
+          Value
+        </Link>
+        <Link
+          href={secretHref(accountId, meta.name, 'versions')}
+          className={tabClass(tab === 'versions')}
+          aria-current={tab === 'versions' ? 'page' : undefined}
+        >
+          Versions {count(versionCount)}
+        </Link>
+        <Link
+          href={secretHref(accountId, meta.name, 'tags')}
+          className={tabClass(tab === 'tags')}
+          aria-current={tab === 'tags' ? 'page' : undefined}
+        >
+          Tags {count(tagCount)}
+        </Link>
+        <div className="flex-1" />
+        {showDanger && (
           <Link
-            key={id}
-            href={secretHref(accountId, meta.name, id)}
-            aria-current={tab === id ? 'page' : undefined}
-            className={cn(
-              'mr-6 inline-flex h-10 items-center border-b-2 px-1 text-sm font-medium',
-              tab === id
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
+            href={secretHref(accountId, meta.name, 'danger')}
+            className={tabClass(tab === 'danger', true)}
+            aria-current={tab === 'danger' ? 'page' : undefined}
           >
-            {label}
+            <TriangleAlertIcon className="size-[15px]" />
+            Danger zone
+            <BadgeTag tone="amber">admin</BadgeTag>
           </Link>
-        ))}
+        )}
       </nav>
-    </>
+    </div>
   )
 }

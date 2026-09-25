@@ -1,6 +1,6 @@
 'use client'
 
-import { EyeIcon, GitCompareIcon, TriangleAlertIcon } from 'lucide-react'
+import { EyeIcon, GitCompareIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -143,30 +143,25 @@ export function VersionsPanel({
     })
 
   const th =
-    'h-10 px-4 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase'
+    'h-10 px-4 text-left text-[11px] font-semibold tracking-[.06em] text-muted-foreground uppercase'
   return (
     <div className="flex flex-col gap-5">
-      <div className="overflow-hidden rounded-xl border bg-card">
-        <table className="w-full border-collapse">
-          <thead className="border-b bg-muted/40">
+      <section aria-label="Versions" className="overflow-hidden rounded-xl border bg-card">
+        <table className="w-full border-collapse text-[13px]">
+          <thead className="bg-sunken">
             <tr>
-              <th className={cn(th, 'w-[22%] pl-5')}>Version</th>
-              <th className={th}>Stages</th>
-              <th className={cn(th, 'w-[18%]')}>Created</th>
-              <th className={cn(th, 'w-[400px]')}>
-                <span className="sr-only">Actions</span>
-              </th>
+              <th className={cn(th, 'w-[260px]')}>Version</th>
+              <th className={cn(th, 'w-[260px]')}>Stages</th>
+              <th className={th}>Created</th>
+              <th className={cn(th, 'text-right')}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {versions.map((v) => {
               const isCurrent = v.versionId === currentVersionId
               return (
-                <tr
-                  key={v.versionId}
-                  className="border-b border-border/60 last:border-0 hover:bg-muted/40"
-                >
-                  <td className="py-3 pr-4 pl-5 font-mono text-sm font-medium" title={v.versionId}>
+                <tr key={v.versionId} className="h-14 border-t hover:bg-muted/30">
+                  <td className="px-4 font-mono font-semibold" title={v.versionId}>
                     {shortVersion(v.versionId)}
                   </td>
                   <td className="px-4">
@@ -180,14 +175,14 @@ export function VersionsPanel({
                   </td>
                   <td className="px-4">
                     <div className="flex flex-col">
-                      <span className="text-sm">{relativeTime(v.createdDate)}</span>
+                      <span className="font-medium">{relativeTime(v.createdDate)}</span>
                       <span className="text-xs text-muted-foreground">
-                        {absoluteDate(v.createdDate)}
+                        {absoluteDate(v.createdDate, true)} UTC
                       </span>
                     </div>
                   </td>
                   <td className="px-4">
-                    <div className="flex justify-end gap-1.5">
+                    <div className="flex justify-end gap-2">
                       {!isCurrent && (
                         <Button
                           size="sm"
@@ -201,7 +196,7 @@ export function VersionsPanel({
                       )}
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="outline"
                         disabled={pending}
                         onClick={() => doReveal(v.versionId)}
                       >
@@ -225,7 +220,17 @@ export function VersionsPanel({
             })}
           </tbody>
         </table>
-      </div>
+        {versions.length === 1 && (
+          <div className="flex items-center gap-2.5 border-t bg-sunken px-4 py-3.5 text-[13px] text-muted-foreground">
+            <InfoIcon className="size-4 shrink-0" />
+            <span>
+              This is the only version. After the next save, the previous version appears here with{' '}
+              <strong className="font-medium text-foreground">Compare keys</strong> and{' '}
+              <strong className="font-medium text-foreground">Make current</strong> (admin).
+            </span>
+          </div>
+        )}
+      </section>
 
       {compare && (
         <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">

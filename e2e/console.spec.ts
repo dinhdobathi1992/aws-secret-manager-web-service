@@ -20,14 +20,31 @@ test.describe('list', () => {
   test('lists, searches by prefix, and `/` focuses search', async ({ page, context }) => {
     await login(context, READER)
     await page.goto('/a/dev-mock')
-    await expect(page.getByRole('heading', { name: 'Secrets' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Secrets', exact: true })).toBeVisible()
     await expect(page.getByRole('link', { name: /team\/app\/db/ }).first()).toBeVisible()
     await page.keyboard.press('/')
-    await expect(page.getByLabel('Search secrets by name')).toBeFocused()
+    await expect(page.getByRole('searchbox', { name: 'Search secrets by name' })).toBeFocused()
     await page.keyboard.type('billing')
     await expect(page).toHaveURL(/q=billing/)
     await expect(page.getByRole('link', { name: /billing\/config/ }).first()).toBeVisible()
     await expect(page.getByRole('link', { name: /team\/app\/db/ })).toHaveCount(0)
+  })
+
+  test('Clear drops search and tag filter, keeps page size, and a pending search cannot undo it', async ({
+    page,
+    context,
+  }) => {
+    await login(context, READER)
+    await page.goto('/a/dev-mock?tk=team&tv=platform&size=50')
+    const search = page.getByRole('searchbox', { name: 'Search secrets by name' })
+    await search.fill('app') // starts the 300 ms search debounce
+    await page.getByRole('link', { name: 'Clear', exact: true }).click()
+    await page.waitForTimeout(700) // past the debounce: a stale timer would restore tk/tv here
+    const url = new URL(page.url())
+    expect(url.searchParams.get('tk')).toBeNull()
+    expect(url.searchParams.get('q')).toBeNull()
+    expect(url.searchParams.get('size')).toBe('50')
+    await expect(search).toHaveValue('')
   })
 
   test('pages under /a are never cached', async ({ page, context }) => {
@@ -106,7 +123,7 @@ test.describe('writer', () => {
     await page.getByRole('button', { name: 'Save new version' }).click()
     const dialog = page.getByRole('alertdialog')
     await expect(dialog.getByText('port')).toBeVisible()
-    await expect(dialog.getByText('changed')).toBeVisible()
+    await expect(dialog.getByText('changed', { exact: true })).toBeVisible()
     await expect(dialog).not.toContainText('6000')
     await dialog.getByRole('button', { name: 'Save version' }).click()
     await expect(page.getByText('Saved a new version.')).toBeVisible()
@@ -155,8 +172,8 @@ test.describe('admin', () => {
     ])
     await login(context, ADMIN)
     await page.goto(secretPath(name, 'versions'))
-    await expect(page.getByText('deprecated')).toBeVisible()
-    const deprecatedRow = page.getByRole('row').filter({ hasText: 'deprecated' })
+    await expect(page.getByText('deprecated').first()).toBeVisible()
+    const deprecatedRow = page.getByRole('row').filter({ hasText: 'deprecated' }).first()
     await deprecatedRow.getByRole('button', { name: 'Make current' }).click()
     const dialog = page.getByRole('alertdialog')
     await expect(dialog.getByRole('button', { name: 'Make current' })).toBeEnabled()

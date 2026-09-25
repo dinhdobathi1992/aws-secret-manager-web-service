@@ -1,6 +1,6 @@
 'use client'
 
-import { ClockIcon, EyeIcon, EyeOffIcon, LockIcon } from 'lucide-react'
+import { ClockIcon, EyeIcon, EyeOffIcon, LockIcon, RefreshCwIcon, XIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCallback, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -26,7 +26,7 @@ import {
   type ValueModel,
 } from '@/lib/ui/secret-value'
 import { cn } from '@/lib/utils'
-import { KeyDiffList } from './key-diff-list'
+import { SaveSummary } from './key-diff-list'
 import { entriesFrom, rowsFrom, type KvRow } from '@/lib/ui/editor-model'
 import { KvEditor } from './kv-editor'
 import { useAutoHide } from './use-auto-hide'
@@ -57,14 +57,19 @@ export function ValuePanel({
   accountId,
   name,
   canEdit,
+  upn,
 }: {
   accountId: string
   name: string
   canEdit: boolean
+  /** Shown in the hidden state: who the reveal will be recorded as. */
+  upn: string
 }) {
   const router = useRouter()
   const [revealed, setRevealed] = useState<Revealed | null>(null)
   const [rows, setRows] = useState<KvRow[]>([])
+  // Rows that came from the stored value: their keys are fixed (rename = remove + add).
+  const [lockedIds, setLockedIds] = useState<ReadonlySet<string>>(new Set())
   const [raw, setRaw] = useState('')
   const [mode, setMode] = useState<'kv' | 'raw'>('kv')
   const [confirm, setConfirm] = useState<{ diff: KeyDiff; value: string } | null>(null)
@@ -85,7 +90,9 @@ export function ValuePanel({
   const load = (next: Revealed) => {
     setEdited(false)
     setRevealed(next)
-    setRows(next.original.kind === 'kv' ? rowsFrom(next.original.entries) : [])
+    const loaded = next.original.kind === 'kv' ? rowsFrom(next.original.entries) : []
+    setRows(loaded)
+    setLockedIds(new Set(loaded.map((r) => r.id)))
     setRaw(next.original.kind === 'json' || next.original.kind === 'text' ? next.original.text : '')
     setMode(next.original.kind === 'kv' ? 'kv' : 'raw')
   }
@@ -110,6 +117,15 @@ export function ValuePanel({
     draft !== null &&
     serialize(draft) !== serialize(revealed.original)
 
+  // Key-level summary of unsaved edits for the footer (names only).
+  const liveDiff = useMemo(
+    () =>
+      revealed && typeof draft === 'object' && draft !== null
+        ? keyDiff(diffEntries(revealed.original), diffEntries(draft))
+        : null,
+    [revealed, draft],
+  )
+
   // Auto-mask after 30s and when the page is hidden; paused only while the user has real edits.
   // `edited` (not `dirty`): a half-typed row with a blank key isn't a valid draft yet, but it is
   // still work the user would lose.
@@ -133,7 +149,10 @@ export function ValuePanel({
       const m = toModel(raw, 'string')
       if (m.kind !== 'kv')
         return setError('Raw JSON must be a flat object of strings to edit as key/value.')
-      setRows(rowsFrom(m.entries))
+      const back = rowsFrom(m.entries)
+      const orig = revealed.original.entries
+      setRows(back)
+      setLockedIds(new Set(back.filter((r) => Object.hasOwn(orig, r.key)).map((r) => r.id)))
     }
     setError(null)
     setMode(next)
@@ -186,78 +205,115 @@ export function ValuePanel({
 
   if (!revealed) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border bg-card px-6 py-14 text-center">
-        <span className="inline-flex size-11 items-center justify-center rounded-full bg-muted">
-          <LockIcon className="size-5" />
+      <section
+        aria-label="Value"
+        className="flex items-center gap-4 rounded-xl border bg-card px-6 py-5"
+      >
+        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-muted">
+          <LockIcon className="size-[18px]" />
         </span>
-        <div className="flex flex-col gap-1">
-          <span className="font-medium">Values are hidden</span>
-          <span className="text-sm text-muted-foreground">
-            Revealing is recorded in the audit log. Values hide again after 30 seconds or when you
-            leave the tab.
-          </span>
+        <div className="flex flex-1 flex-col gap-1">
+          <h2 className="text-[15px] font-semibold">Values are hidden</h2>
+          <p className="text-[13px] text-muted-foreground">
+            Revealing is recorded in CloudTrail as <span className="text-foreground">{upn}</span>.
+            Values hide again after 30 seconds or when you leave the tab.
+          </p>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
         </div>
-        <Button onClick={reveal} disabled={pending}>
+        <Button onClick={reveal} disabled={pending} className="h-9 px-3.5">
           <EyeIcon />
           {pending ? 'Revealing…' : 'Reveal values'}
         </Button>
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-      </div>
+      </section>
     )
   }
 
   const kind = revealed.original.kind
   const readOnly = !canEdit || kind === 'binary'
+  const paused = canEdit && edited
+  const summary = (() => {
+    if (!dirty) return null
+    // Key counts only make sense key/value → key/value (raw JSON that doesn't parse is text).
+    const kvToKv =
+      revealed?.original.kind === 'kv' && typeof draft === 'object' && draft?.kind === 'kv'
+    if (!liveDiff || !kvToKv) return 'Value changed.'
+    const groups = (
+      [
+        ['changed', liveDiff.changed.length],
+        ['added', liveDiff.added.length],
+        ['removed', liveDiff.removed.length],
+      ] as const
+    ).filter(([, n]) => n > 0)
+    if (groups.length === 0) return 'Value changed.' // e.g. only the key order
+    if (groups.length === 1) {
+      const [label, n] = groups[0]
+      return `${n} ${n === 1 ? 'key' : 'keys'} ${label}.`
+    }
+    return `${groups.map(([label, n]) => `${n} ${label}`).join(', ')}.`
+  })()
+  const segment = (on: boolean) =>
+    cn(
+      'h-7 rounded-md px-3 text-[13px] font-medium',
+      on ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
+    )
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex gap-1.5" role="group" aria-label="View">
-          {kind === 'kv' ? (
-            <>
-              <Button
-                size="sm"
-                variant={mode === 'kv' ? 'default' : 'outline'}
-                aria-pressed={mode === 'kv'}
-                onClick={() => switchMode('kv')}
-              >
-                Key / value
-              </Button>
-              <Button
-                size="sm"
-                variant={mode === 'raw' ? 'default' : 'outline'}
-                aria-pressed={mode === 'raw'}
-                onClick={() => switchMode('raw')}
-              >
-                Raw JSON
-              </Button>
-            </>
-          ) : (
-            <span className="text-sm font-medium">
-              {kind === 'binary'
-                ? 'Binary (base64, read-only)'
-                : kind === 'json'
-                  ? 'JSON'
-                  : 'Plain text'}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
-            <ClockIcon className="size-3.5" />
-            {canEdit && edited
-              ? 'Auto-hide paused while you have unsaved changes'
-              : 'Hides in 30s or when you leave the tab'}
+    <section aria-label="Value" className="overflow-hidden rounded-xl border bg-card">
+      <div className="flex items-center gap-3 border-b px-4 py-2.5">
+        {kind === 'kv' ? (
+          <div
+            role="group"
+            aria-label="View as"
+            className="flex gap-0.5 rounded-lg border bg-background p-0.5"
+          >
+            <button
+              type="button"
+              aria-pressed={mode === 'kv'}
+              onClick={() => switchMode('kv')}
+              className={segment(mode === 'kv')}
+            >
+              Key / value
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === 'raw'}
+              onClick={() => switchMode('raw')}
+              className={segment(mode === 'raw')}
+            >
+              Raw JSON
+            </button>
+          </div>
+        ) : (
+          <span className="text-[13px] font-medium">
+            {kind === 'binary'
+              ? 'Binary (base64, read-only)'
+              : kind === 'json'
+                ? 'JSON'
+                : 'Plain text'}
           </span>
-          <Button size="sm" variant="outline" onClick={hide}>
-            <EyeOffIcon />
-            Hide
-          </Button>
-        </div>
+        )}
+        <div className="flex-1" />
+        <span
+          className={cn(
+            'inline-flex h-[26px] items-center gap-1.5 rounded-full px-2.5 text-xs font-medium',
+            paused
+              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+              : 'bg-muted text-muted-foreground',
+          )}
+        >
+          <ClockIcon className="size-3.5" />
+          {paused
+            ? 'Auto-hide paused while you have unsaved changes'
+            : 'Hides in 30s or when you leave the tab'}
+        </span>
+        <Button size="sm" variant="outline" className="h-8" onClick={hide}>
+          <EyeOffIcon />
+          Hide
+        </Button>
       </div>
 
       {kind === 'kv' && mode === 'kv' ? (
@@ -269,6 +325,8 @@ export function ValuePanel({
           }}
           readOnly={readOnly}
           onCopy={copyWithClear}
+          original={revealed.original.kind === 'kv' ? revealed.original.entries : undefined}
+          lockedIds={lockedIds}
         />
       ) : (
         <div className="p-4">
@@ -289,7 +347,7 @@ export function ValuePanel({
             spellCheck={false}
             autoComplete="off"
             className={cn(
-              'min-h-48 font-mono text-[13px] leading-relaxed',
+              'min-h-48 bg-background font-mono text-[13px] leading-relaxed',
               readOnly && 'bg-muted/40',
             )}
           />
@@ -303,35 +361,64 @@ export function ValuePanel({
       )}
 
       {!readOnly && (
-        <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-3">
+        <div className="flex items-center gap-2 border-t bg-sunken px-4 py-3">
+          <span
+            className={cn(
+              'size-[7px] shrink-0 rounded-full',
+              dirty ? 'bg-amber-500' : 'bg-zinc-500',
+            )}
+          />
           <span className="text-[13px] text-muted-foreground">
-            Editing version <span className="font-mono">{revealed.versionId?.slice(0, 8)}</span>. If
-            someone saves first, you’ll be asked to reload.
+            {summary
+              ? `${summary} Saving creates a new version; the current one becomes AWSPREVIOUS.`
+              : 'No unsaved changes. If someone saves first, you’ll be asked to reload.'}
           </span>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" disabled={!dirty} onClick={() => load(revealed)}>
-              Discard
-            </Button>
-            <Button size="sm" disabled={!dirty || pending} onClick={askSave}>
-              Save new version
-            </Button>
-          </div>
+          <div className="flex-1" />
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8"
+            disabled={!dirty}
+            onClick={() => load(revealed)}
+          >
+            Discard
+          </Button>
+          <Button size="sm" className="h-8 px-3.5" disabled={!dirty || pending} onClick={askSave}>
+            Save new version…
+          </Button>
         </div>
       )}
 
       <AlertDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
+        <AlertDialogContent className="sm:max-w-[520px]">
+          <AlertDialogHeader className="relative pr-8">
             <AlertDialogTitle>Save a new version?</AlertDialogTitle>
             <AlertDialogDescription>
-              This becomes AWSCURRENT for <span className="font-mono">{name}</span>. The previous
-              version stays available for rollback.
+              <span className="font-mono text-foreground">{name}</span> gets a new AWSCURRENT
+              version. The current version becomes AWSPREVIOUS and can be made current again.
             </AlertDialogDescription>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Close"
+              className="absolute top-0 right-0 text-muted-foreground"
+              onClick={() => setConfirm(null)}
+            >
+              <XIcon />
+            </Button>
           </AlertDialogHeader>
-          {confirm && <KeyDiffList diff={confirm.diff} />}
-          <p className="text-xs text-muted-foreground">
-            Only key names are shown here. Values never appear in this summary.
-          </p>
+          {confirm && <SaveSummary diff={confirm.diff} />}
+          <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+            <p className="flex items-center gap-2">
+              <EyeOffIcon className="size-3.5" />
+              Only key names are listed here. Values never appear in this summary.
+            </p>
+            <p className="flex items-center gap-2">
+              <RefreshCwIcon className="size-3.5" />
+              If someone changed the secret since you revealed it, the save stops and asks you to
+              reload.
+            </p>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={save} disabled={pending}>
@@ -340,6 +427,6 @@ export function ValuePanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </section>
   )
 }

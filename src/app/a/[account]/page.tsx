@@ -1,3 +1,4 @@
+import { LockIcon } from 'lucide-react'
 import { AwsErrorState } from '@/components/aws-error-state'
 import { CreateSecretDialog } from '@/components/create-secret-dialog'
 import { ListToolbar } from '@/components/list-toolbar'
@@ -6,7 +7,7 @@ import { DOT, SecretsTable, type SortKey } from '@/components/secrets-table'
 import { can } from '@/lib/auth/rbac'
 import { listSecrets, type SecretSummary } from '@/lib/aws/secrets'
 import { load, pageContext } from '@/lib/data/page-data'
-import { FRESHNESS_LABEL, PAGE_SIZES, type Freshness, requestTime } from '@/lib/ui/format'
+import { FRESHNESS_SHORT, PAGE_SIZES, type Freshness, requestTime } from '@/lib/ui/format'
 import { cn } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
@@ -93,8 +94,8 @@ export default async function SecretsPage({
     <>
       <div className="flex items-end justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">Secrets</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-[-0.01em]">Secrets</h1>
+          <p className="text-[13px] text-muted-foreground">
             {auth.account.name} · {auth.account.region}
           </p>
         </div>
@@ -102,52 +103,62 @@ export default async function SecretsPage({
           <CreateSecretDialog accountId={auth.account.id} accountName={auth.account.name} />
         )}
       </div>
-      <ListToolbar tagOptions={tagOptions} />
-      {!result.ok ? (
-        <AwsErrorState code={result.code} />
-      ) : (
-        <div className="overflow-hidden rounded-xl border bg-card shadow-[0_1px_2px_rgba(24,24,27,.04),0_8px_24px_-12px_rgba(24,24,27,.08)]">
-          <div className="flex items-center justify-between border-b px-5 py-3.5">
-            <div className="flex items-center gap-2.5">
-              <span className="text-[15px] font-semibold">
-                {sp.q || sp.tk ? 'Matching secrets' : 'All secrets'}
-              </span>
-              <span className="inline-flex h-[22px] items-center rounded-full bg-muted px-2 text-xs font-semibold">
-                {items.length}
-                {result.data.nextToken ? '+' : ''}
-              </span>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              {(Object.keys(FRESHNESS_LABEL) as Freshness[]).map((f) => (
-                <span key={f} className="inline-flex items-center gap-1.5">
-                  <span className={cn('size-2 rounded-full', DOT[f])} />
-                  {FRESHNESS_LABEL[f]}
-                </span>
-              ))}
-            </div>
+      <section className="overflow-hidden rounded-xl border bg-card shadow-[0_1px_2px_rgba(0,0,0,.06),0_8px_24px_-12px_rgba(0,0,0,.18)] dark:shadow-[0_1px_2px_rgba(0,0,0,.3),0_8px_24px_-12px_rgba(0,0,0,.5)]">
+        <ListToolbar tagOptions={tagOptions} />
+        {!result.ok ? (
+          <div className="p-4">
+            <AwsErrorState code={result.code} />
           </div>
-          {items.length ? (
-            <SecretsTable
-              accountId={auth.account.id}
-              items={items}
-              sort={sort}
-              dir={dir}
-              hrefFor={hrefFor}
-              now={now}
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-1 px-5 py-16 text-center">
-              <span className="font-medium">No secrets found</span>
-              <span className="text-sm text-muted-foreground">
-                {sp.q || sp.tk
-                  ? 'Try a different name prefix or tag.'
-                  : 'This account has no secrets yet.'}
-              </span>
+        ) : (
+          <>
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold">
+                  {sp.q || sp.tk ? 'Matching secrets' : 'All secrets'}
+                </h2>
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-semibold">
+                  {items.length}
+                  {result.data.nextToken ? '+' : ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span>Last changed:</span>
+                {(Object.keys(FRESHNESS_SHORT) as Freshness[]).map((f) => (
+                  <span key={f} className="inline-flex items-center gap-1.5">
+                    <span className={cn('size-[7px] rounded-full', DOT[f])} />
+                    {FRESHNESS_SHORT[f]}
+                  </span>
+                ))}
+              </div>
             </div>
-          )}
-          <Pager shown={items.length} size={size} nextToken={result.data.nextToken} />
-        </div>
-      )}
+            {items.length ? (
+              <SecretsTable
+                accountId={auth.account.id}
+                items={items}
+                sort={sort}
+                dir={dir}
+                hrefFor={hrefFor}
+                now={now}
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-1 border-t px-5 py-16 text-center">
+                <span className="font-medium">No secrets found</span>
+                <span className="text-sm text-muted-foreground">
+                  {sp.q || sp.tk
+                    ? 'Try a different name prefix or tag.'
+                    : 'This account has no secrets yet.'}
+                </span>
+              </div>
+            )}
+            <Pager shown={items.length} size={size} nextToken={result.data.nextToken} />
+          </>
+        )}
+      </section>
+      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        <LockIcon className="size-3.5" />
+        Values and key names stay hidden until you open a secret and reveal it. Every reveal is
+        recorded.
+      </p>
     </>
   )
 }

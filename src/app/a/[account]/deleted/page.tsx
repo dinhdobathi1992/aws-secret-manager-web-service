@@ -16,7 +16,7 @@ export default async function DeletedPage({ params }: { params: Promise<{ accoun
   const canRestore = can(auth.role, 'restore')
   const now = requestTime()
   const th =
-    'h-10 px-4 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase'
+    'h-10 px-4 text-left text-[11px] font-semibold tracking-[.06em] text-muted-foreground uppercase'
 
   return (
     <>
@@ -42,8 +42,8 @@ export default async function DeletedPage({ params }: { params: Promise<{ accoun
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border bg-card">
-          <table className="w-full border-collapse">
-            <thead className="border-b bg-muted/40">
+          <table className="w-full border-collapse text-[13px]">
+            <thead className="bg-sunken">
               <tr>
                 <th className={`${th} pl-5`}>Name</th>
                 <th className={th}>Description</th>
@@ -59,7 +59,7 @@ export default async function DeletedPage({ params }: { params: Promise<{ accoun
               {result.data.items.map((s) => {
                 const est = deletionEstimate(s.deletedDate, RECOVERY_WINDOW_DAYS, now)
                 return (
-                  <tr key={s.name} className="border-b border-border/60 last:border-0">
+                  <tr key={s.name} className="h-14 border-t">
                     <td className="py-3 pr-4 pl-5 font-mono text-sm font-medium">{s.name}</td>
                     <td className="px-4 text-sm text-muted-foreground">{s.description}</td>
                     <td className="px-4 text-sm text-muted-foreground">
@@ -68,7 +68,7 @@ export default async function DeletedPage({ params }: { params: Promise<{ accoun
                     <td className="px-4 text-sm">{est ? absoluteDate(est.deletesAt) : '—'}</td>
                     <td className="px-4">
                       {est && (
-                        <span className="inline-flex h-5 items-center rounded-full bg-red-100 px-2 text-[11px] font-semibold text-red-800 dark:bg-red-950 dark:text-red-300">
+                        <span className="inline-flex h-5 items-center rounded-[5px] bg-red-100 px-[7px] text-[11px] font-semibold text-red-800 dark:bg-red-950 dark:text-red-300">
                           {est.daysLeft} {est.daysLeft === 1 ? 'day' : 'days'} left
                         </span>
                       )}

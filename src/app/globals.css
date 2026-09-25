@@ -39,6 +39,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* Header strips and footers inside cards (the refactor's #111 in dark). */
+  --color-sunken: var(--sunken);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -50,6 +52,7 @@
 
 :root {
   --background: oklch(0.985 0 0);
+  --sunken: oklch(0.975 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -85,6 +88,7 @@
 
 .dark {
   --background: oklch(0.145 0 0);
+  --sunken: oklch(0.178 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);

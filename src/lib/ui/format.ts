@@ -33,6 +33,13 @@ export function absoluteDate(iso: string | undefined, withTime = false): string 
 
 export type Freshness = 'week' | 'quarter' | 'stale'
 
+/** Short legend labels (after "Last changed:"). */
+export const FRESHNESS_SHORT: Record<Freshness, string> = {
+  week: 'This week',
+  quarter: 'Within 90 days',
+  stale: 'Older',
+}
+
 export const FRESHNESS_LABEL: Record<Freshness, string> = {
   week: 'Changed this week',
   quarter: 'Changed in the last 90 days',
@@ -93,14 +100,8 @@ const PALETTE = [
   'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300',
 ] as const
 
-const TAG_PALETTE = [
-  'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/50 dark:border-violet-900 dark:text-violet-300',
-  'bg-teal-50 border-teal-200 text-teal-700 dark:bg-teal-950/50 dark:border-teal-900 dark:text-teal-300',
-  'bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-950/50 dark:border-sky-900 dark:text-sky-300',
-  'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/50 dark:border-rose-900 dark:text-rose-300',
-  'bg-lime-50 border-lime-200 text-lime-700 dark:bg-lime-950/50 dark:border-lime-900 dark:text-lime-300',
-  'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950/50 dark:border-orange-900 dark:text-orange-300',
-] as const
+// Tag chips share the palette: tinted rectangles, no border.
+const TAG_PALETTE = PALETTE
 
 function hash(s: string): number {
   let h = 0

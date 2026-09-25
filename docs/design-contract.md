@@ -4,6 +4,9 @@ This is the agreed UI/UX contract for the console. Thi approved it on 2026-09-25
 prototype canvas (`https://claude.ai/artifact/RjAzjfoTKp3yR2K7f5sFfq`, Phases 5 and 8). The
 implementation in `src/` follows it. Change this file first when the design changes.
 
+Phase 9 (2026-09-25) applied Thi's UX refactor (`Secrets Console — UX refactor.html`): dark by
+default, with the layout changes described below.
+
 ## 1. Principles
 
 - **Quiet and dense.** An internal tool that looks and works like other internal tools. Colour
@@ -18,12 +21,13 @@ implementation in `src/` follows it. Change this file first when the design chan
 
 ## 2. Visual tokens
 
-Theme: shadcn/ui `radix-nova` preset, neutral (zinc) base, light and dark modes (system default,
+Theme: shadcn/ui `radix-nova` preset, neutral (zinc) base, light and dark modes (**dark by default**,
 toggle in the header). Source of truth: `src/app/globals.css`.
 
 | Token                | Light                     | Dark                      | Use                                                    |
 | -------------------- | ------------------------- | ------------------------- | ------------------------------------------------------ |
 | `--background`       | `oklch(0.985 0 0)`        | `oklch(0.145 0 0)`        | Page ground (soft grey)                                |
+| `--sunken`           | `oklch(0.975 0 0)`        | `oklch(0.178 0 0)`        | Header strips and footers inside cards                 |
 | `--card`             | `oklch(1 0 0)`            | `oklch(0.205 0 0)`        | Cards, tables, dialogs                                 |
 | `--foreground`       | `oklch(0.145 0 0)`        | `oklch(0.985 0 0)`        | Text                                                   |
 | `--muted-foreground` | `oklch(0.45 0 0)`         | `oklch(0.708 0 0)`        | Secondary text (darkened from the preset for contrast) |
@@ -62,15 +66,18 @@ orange). No configuration is needed; unknown values still get a consistent colou
 
 ## 3. Layout and shell
 
-- **Top bar only** (56 px, no sidebar), with:
-  - the logo (`APP_LOGO_URL`, or a key icon) and `APP_NAME`;
-  - the **account switcher**: name, short account id `1234…9012`, role badge;
-  - the admin-only **Activity** link, **Scheduled deletion** with a count;
-  - the theme toggle and the user menu (name, UPN, Sign out).
-- **Content** is centred, `max-width: 1400px`, with 40 px side padding and 20 px vertical rhythm.
-- **Account switcher:** a command palette with search. It lists **only accounts where the user
-  has a role**, each with its role badge and a check mark on the current one.
-- **Responsive** down to 1024 px. Mobile gets a readable view only.
+- **Top bar** (56 px, no sidebar, 40 px side padding), with:
+  - the logo and `APP_NAME`;
+  - a **bordered account switcher**: name, short account id, role badge;
+  - **navigation tabs**: Secrets (active on the list and every secret page), **Activity** (admins
+    only) and **Scheduled deletion** with a count;
+  - on the right, the theme toggle and a single-letter avatar menu (name, UPN, Sign out).
+- **Content** is up to 1440 px wide, with 40 px side padding.
+- **Badges** are small rectangles (5 px radius, 11 px uppercase): roles, AWSCURRENT, RECENT,
+  DEFAULT, CHANGED, NEW, ADMIN.
+- **Inputs inside cards** sit on the page background colour. Table headers and card footers use
+  `bg-sunken`.
+- **Account switcher:** a command palette listing only accounts where the user has a role.
 
 ## 4. Screens
 
@@ -84,10 +91,11 @@ builds don't contain it.
 ### 4.2 Secrets list (`/a/[account]`)
 
 - Header: "Secrets", then the account and region, and **New secret** (writer and up).
-- Toolbar:
+- Toolbar **inside the table card** (Phase 9):
   - search box ("Search by name prefix", `/` hint), filtered on the server;
-  - **tag chips** built from the tags in view (active chip dark with an ✕);
-  - **+ Tag filter** (key, optional value).
+  - the active tag filter as a pill with ✕;
+  - a dashed **+ Tag filter** button, whose popover suggests the tags in view or takes a key and optional value;
+  - **Clear**, when any filter is active.
 - Table card:
   - Header row: "All secrets" or "Matching secrets", a count badge, and the freshness legend.
   - **Name:** a 34 px coloured prefix tile (first two letters of the top-level segment), the path
@@ -98,21 +106,24 @@ builds don't contain it.
   - Sortable headers (Name, Last changed) sort within the current page.
 - Footer: "Showing N secrets", rows per page (25/50/100), Previous (browser back) / Next (AWS
   token).
+- Below the card: "Values and key names stay hidden until you open a secret and reveal it. Every reveal is recorded."
 - The table never shows secret type or key count: getting them would mean reading the value.
 
 ### 4.3 Secret detail (`/a/[account]/s/…name`)
 
 - Breadcrumb "‹ Secrets / name", the name as the mono title, and the description.
-- **Metadata strip:** a full-width card with three tiles. Each tile has a tinted icon, an
-  uppercase label, a bold value and a detail line.
+- **Copy name** and **Copy ARN** buttons on the right of the title.
+- **Metadata strip:** a full-width card with four tiles.
 
-  | Tile                    | Value                                                       | Detail                               |
-  | ----------------------- | ----------------------------------------------------------- | ------------------------------------ |
-  | Current version (green) | Short id, `AWSCURRENT` chip, copy                           | "N versions retained · View history" |
-  | Last changed (blue)     | Relative time, plus a **recent** badge if within 7 days     | Exact UTC time · "last read …"       |
-  | Encryption (grey)       | "AWS managed key · default" or "Customer managed key · cmk" | Key alias or id                      |
+  | Tile                    | Value                                                                           | Detail                                |
+  | ----------------------- | ------------------------------------------------------------------------------- | ------------------------------------- |
+  | Current version (green) | Short id, `AWSCURRENT`, copy                                                    | "N versions retained · View history"  |
+  | Value changed (blue)    | Relative time (creation of the AWSCURRENT version), **RECENT** if within 7 days | Exact UTC time                        |
+  | Last accessed (grey)    | Date, or "Never"                                                                | "AWS records access by day, not time" |
+  | Encryption (grey)       | "AWS managed key · DEFAULT" or "Customer managed key · CMK"                     | Key alias or id                       |
 
-- **Tabs:** Value · Versions · Tags · Danger zone (admin only).
+- **Tabs:** Value · Versions (count) · Tags (count). **Danger zone** sits on the right, in red,
+  with an ADMIN badge (admins only).
 - A red banner when deletion was requested: "Deletion was requested on DATE", with a link to
   restore.
 
@@ -239,3 +250,40 @@ no formal WCAG conformance target (a plan decision).
 | 2026-09-25 | Secrets table: prefix tiles, path/leaf emphasis, coloured tag chips, freshness dots, table toolbar (Thi's feedback) |
 | 2026-09-25 | No key names before Reveal. This differs from the prototype, for audit reasons                                      |
 | 2026-09-25 | Activity page is admin-only, backed by CloudTrail, with no database (Thi)                                           |
+
+### Phase 9 screen updates (2026-09-25)
+
+- **Value tab:**
+  - The hidden state is one compact row that names who the reveal is recorded as.
+  - Revealed: a segmented **Key / value | Raw JSON** control and a status pill (amber while
+    auto-hide is paused).
+  - **Existing keys are shown as text** (renaming = remove + add). Changed values get a
+    **CHANGED** badge and an amber border; new rows get **NEW**.
+  - A dashed **Add key** button.
+  - Footer: "N key(s) changed/added/removed. Saving creates a new version; the current one
+    becomes AWSPREVIOUS.", then Discard and **Save new version…**.
+- **Save dialog:**
+  - a grouped box (CHANGED / ADDED / REMOVED, with key names) and "Added: none" style summaries
+    for empty groups;
+  - a close ✕;
+  - two notes: key names only, and the save stops on conflict.
+- **Versions:** when there is a single version, a footer note explains that Compare keys and Make
+  current appear after the next save.
+- **Tags:** a 760 px card plus a notes column (tags don't create versions; `aws:` is reserved).
+  **NEW** badges, and an "N unsaved changes" footer.
+- **Danger zone:**
+  - a fact grid: takes effect / recovery window / gone for good (about a date);
+  - a last-accessed warning when AWS reports access;
+  - live "Doesn't match yet" feedback;
+  - a red footer strip with the button disabled until the name matches.
+- **Activity:**
+  - Range dropdown and **Newest** in the header.
+  - **Five clickable filter tiles with counts:** Changes & reveals (default), Reveals, Changes,
+    Failed, All events.
+  - Card toolbar: User and Secret search, and "Showing X of N loaded events".
+  - The table is grouped by UTC day and shows times as HH:MM.
+  - Expanded details are a five-column grid.
+
+| Date       | Decision                                                                                      |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| 2026-09-25 | Phase 9: Thi's UX refactor implemented. Dark by default. Behaviour and security are unchanged |

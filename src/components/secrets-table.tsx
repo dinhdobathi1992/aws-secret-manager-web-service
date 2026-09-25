@@ -16,9 +16,9 @@ import { cn } from '@/lib/utils'
 import { CopyButton } from './copy-button'
 
 export const DOT: Record<Freshness, string> = {
-  week: 'bg-green-600 ring-green-600/15',
-  quarter: 'bg-amber-600 ring-amber-600/15',
-  stale: 'bg-zinc-400 ring-zinc-400/15',
+  week: 'bg-green-500',
+  quarter: 'bg-amber-500',
+  stale: 'bg-zinc-500',
 }
 
 export type SortKey = 'name' | 'changed'
@@ -27,11 +27,11 @@ export function TagChip({ k, v }: { k: string; v: string }) {
   return (
     <span
       className={cn(
-        'inline-flex h-6 items-center gap-1 rounded-full border px-2.5 font-mono text-xs',
+        'inline-flex h-[22px] items-center gap-[5px] rounded-md px-2 font-mono text-xs whitespace-nowrap',
         tagColor(k),
       )}
     >
-      <span className="opacity-75">{k}</span>
+      <span className="opacity-70">{k}</span>
       <span className="font-semibold">{v}</span>
     </span>
   )
@@ -52,7 +52,7 @@ export function NameCell({
       <span
         aria-hidden
         className={cn(
-          'inline-flex size-[34px] shrink-0 items-center justify-center rounded-[9px] font-mono text-xs font-semibold',
+          'inline-flex size-8 shrink-0 items-center justify-center rounded-lg font-mono text-[11px] font-semibold',
           prefixColor(top),
         )}
       >
@@ -61,13 +61,13 @@ export function NameCell({
       <div className="flex min-w-0 flex-col gap-0.5">
         <Link
           href={secretHref(accountId, name)}
-          className="truncate font-mono text-sm hover:text-blue-700 dark:hover:text-blue-400"
+          className="truncate font-mono text-[13px] hover:underline"
         >
           <span className="text-muted-foreground">{path}</span>
           <span className="font-semibold">{leaf}</span>
         </Link>
         {description && (
-          <span className="truncate text-[13px] text-muted-foreground">{description}</span>
+          <span className="truncate text-xs text-muted-foreground">{description}</span>
         )}
       </div>
     </div>
@@ -123,11 +123,11 @@ export function SecretsTable({
     <table className="w-full border-collapse">
       <thead className="border-b bg-muted/40">
         <tr>
-          <th className={cn(th, 'pl-5')}>
+          <th className={th}>
             <SortHeader label="Name" sortKey="name" sort={sort} dir={dir} hrefFor={hrefFor} />
           </th>
-          <th className={cn(th, 'w-[26%]')}>Tags</th>
-          <th className={cn(th, 'w-[180px]')}>
+          <th className={cn(th, 'w-[420px]')}>Tags</th>
+          <th className={cn(th, 'w-[200px]')}>
             <SortHeader
               label="Last changed"
               sortKey="changed"
@@ -136,7 +136,7 @@ export function SecretsTable({
               hrefFor={hrefFor}
             />
           </th>
-          <th className={cn(th, 'w-[90px]')}>
+          <th className={cn(th, 'w-20')}>
             <span className="sr-only">Actions</span>
           </th>
         </tr>
@@ -158,7 +158,7 @@ export function SecretsTable({
                   {tags.length ? (
                     tags.map(([k, v]) => <TagChip key={k} k={k} v={v} />)
                   ) : (
-                    <span className="text-[13px] text-muted-foreground/70">No tags</span>
+                    <span className="text-xs text-muted-foreground/70">No tags</span>
                   )}
                 </div>
               </td>
@@ -167,7 +167,7 @@ export function SecretsTable({
                   <span
                     title={FRESHNESS_LABEL[f]}
                     aria-label={FRESHNESS_LABEL[f]}
-                    className={cn('mt-1.5 size-2 shrink-0 rounded-full ring-[3px]', DOT[f])}
+                    className={cn('mt-1.5 size-2 shrink-0 rounded-full', DOT[f])}
                   />
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-medium">

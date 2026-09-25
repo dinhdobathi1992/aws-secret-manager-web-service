@@ -9,9 +9,9 @@ import { TagsPanel } from '@/components/tags-panel'
 import { ValuePanel } from '@/components/value-panel'
 import { VersionsPanel } from '@/components/versions-panel'
 import { can } from '@/lib/auth/rbac'
-import { describeSecret, listVersions } from '@/lib/aws/secrets'
+import { describeSecret, listVersions, RECOVERY_WINDOW_DAYS } from '@/lib/aws/secrets'
 import { load, pageContext } from '@/lib/data/page-data'
-import { absoluteDate, secretNameFromSegments } from '@/lib/ui/format'
+import { absoluteDate, requestTime, secretNameFromSegments } from '@/lib/ui/format'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,8 +45,10 @@ export default async function SecretPage({
         accountId={auth.account.id}
         meta={meta}
         versionCount={versions.length}
+        valueChangedAt={versions.find((v) => v.versionId === meta.currentVersionId)?.createdDate}
         tab={tab}
         showDanger={isAdmin}
+        now={requestTime()}
       />
       {meta.deletedDate && (
         <div className="flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
@@ -61,7 +63,12 @@ export default async function SecretPage({
         </div>
       )}
       {tab === 'value' && (
-        <ValuePanel accountId={auth.account.id} name={name} canEdit={can(auth.role, 'update')} />
+        <ValuePanel
+          accountId={auth.account.id}
+          name={name}
+          canEdit={can(auth.role, 'update')}
+          upn={auth.user.upn}
+        />
       )}
       {tab === 'versions' && (
         <VersionsPanel
@@ -83,7 +90,15 @@ export default async function SecretPage({
       )}
       {tab === 'danger' &&
         (isAdmin ? (
-          <DangerPanel accountId={auth.account.id} name={name} />
+          <DangerPanel
+            accountId={auth.account.id}
+            name={name}
+            lastAccessed={meta.lastAccessedDate ? absoluteDate(meta.lastAccessedDate) : undefined}
+            recoveryDays={RECOVERY_WINDOW_DAYS}
+            goneBy={absoluteDate(
+              new Date(requestTime() + RECOVERY_WINDOW_DAYS * 86_400_000).toISOString(),
+            )}
+          />
         ) : (
           <ForbiddenState requiredRole="admin" currentRole={auth.role} />
         ))}

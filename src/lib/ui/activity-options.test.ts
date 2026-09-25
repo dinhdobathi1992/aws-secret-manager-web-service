@@ -41,6 +41,8 @@ describe('filterActivity', () => {
     expect(ids(filterActivity(E, { type: 'changes' }))).toEqual(['r', 'c', 'f']))
   it('reveals only', () => expect(ids(filterActivity(E, { type: 'reveals' }))).toEqual(['r']))
   it('failed only', () => expect(ids(filterActivity(E, { type: 'failed' }))).toEqual(['f']))
+  it('writes: changes and failures, no reveals or reads', () =>
+    expect(ids(filterActivity(E, { type: 'writes' }))).toEqual(['c', 'f']))
   it('all includes reads', () => expect(ids(filterActivity(E, { type: 'all' }))).toHaveLength(4))
   it('filters by user and secret, case-insensitively', () => {
     expect(ids(filterActivity(E, { type: 'all', user: 'LINH' }))).toEqual(['c'])
