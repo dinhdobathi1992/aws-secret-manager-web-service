@@ -22,11 +22,14 @@ export function NavTabs({
       : 'secrets'
   const item = (on: boolean) =>
     cn(
-      'flex h-[38px] items-center gap-2 rounded-md px-3.5 text-sm font-medium text-primary transition-colors',
+      'flex h-[38px] shrink-0 items-center gap-2 rounded-md px-3.5 text-sm font-medium whitespace-nowrap text-primary transition-colors',
       on ? 'bg-primary-subtle' : 'hover:bg-primary-subtle/60',
     )
   return (
-    <nav aria-label="Main" className="flex items-center gap-1">
+    <nav
+      aria-label="Main"
+      className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto px-1 md:order-none md:mx-0 md:w-auto md:overflow-visible md:px-0"
+    >
       <Link
         href={base}
         className={item(active === 'secrets')}

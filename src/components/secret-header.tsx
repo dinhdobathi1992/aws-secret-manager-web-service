@@ -95,7 +95,7 @@ export function SecretHeader({
   )
   const tabClass = (on: boolean, danger = false) =>
     cn(
-      '-mb-px inline-flex h-11 items-center gap-1.5 border-b-2 text-[15px] font-medium',
+      '-mb-px inline-flex h-11 shrink-0 items-center gap-1.5 border-b-2 text-[15px] font-medium whitespace-nowrap',
       danger
         ? on
           ? 'border-destructive text-destructive'
@@ -116,7 +116,7 @@ export function SecretHeader({
           Back to secrets
         </Link>
       </nav>
-      <div className="mt-3.5 flex items-end justify-between gap-6">
+      <div className="mt-3.5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="flex min-w-0 flex-col gap-1.5">
           <h1 className="font-mono text-[26px] leading-[34px] font-semibold break-all text-foreground">
             {meta.name}
@@ -125,7 +125,7 @@ export function SecretHeader({
             <p className="text-[15px] text-muted-foreground">{meta.description}</p>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <CopyButton text={meta.name} label="Copy secret name">
             Copy name
           </CopyButton>
@@ -135,7 +135,7 @@ export function SecretHeader({
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetaTile
           icon={<LayersIcon className="size-[18px]" />}
           tint="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
@@ -190,7 +190,10 @@ export function SecretHeader({
         </MetaTile>
       </div>
 
-      <nav aria-label="Secret sections" className="mt-7 flex h-[45px] items-end gap-7 border-b">
+      <nav
+        aria-label="Secret sections"
+        className="mt-7 flex h-[45px] items-end gap-5 overflow-x-auto overflow-y-hidden border-b md:gap-7"
+      >
         <Link
           href={secretHref(accountId, meta.name)}
           className={tabClass(tab === 'value')}

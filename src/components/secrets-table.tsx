@@ -120,7 +120,7 @@ export function SecretsTable({
   const th =
     'h-11 px-5 text-left text-xs font-semibold tracking-[.04em] text-muted-foreground uppercase'
   return (
-    <table className="w-full border-collapse">
+    <table className="w-full min-w-[720px] border-collapse">
       <thead className="border-b bg-sunken">
         <tr>
           <th className={th}>

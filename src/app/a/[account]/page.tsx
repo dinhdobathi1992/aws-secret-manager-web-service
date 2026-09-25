@@ -129,7 +129,7 @@ export default async function SecretsPage({
               />
             }
             table={
-              <section className="surface overflow-hidden">
+              <section className="surface overflow-x-auto">
                 <SecretsTable
                   accountId={auth.account.id}
                   items={items}

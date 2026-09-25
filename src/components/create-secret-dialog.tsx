@@ -135,7 +135,7 @@ export function CreateSecretDialog({
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] gap-[18px] overflow-y-auto p-8 sm:max-w-[800px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">Create new secret</DialogTitle>
+          <DialogTitle>Create new secret</DialogTitle>
           <DialogDescription>
             In {accountName}. The value is stored in AWS Secrets Manager and never logged.
           </DialogDescription>

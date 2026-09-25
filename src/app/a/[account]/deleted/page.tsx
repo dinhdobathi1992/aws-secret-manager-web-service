@@ -41,8 +41,8 @@ export default async function DeletedPage({ params }: { params: Promise<{ accoun
           Nothing is scheduled for deletion.
         </div>
       ) : (
-        <div className="surface overflow-hidden">
-          <table className="w-full border-collapse text-sm">
+        <div className="surface overflow-x-auto">
+          <table className="w-full min-w-[760px] border-collapse text-sm">
             <thead className="border-b bg-sunken">
               <tr>
                 <th className={`${th} pl-5`}>Name</th>

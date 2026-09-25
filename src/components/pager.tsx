@@ -33,14 +33,14 @@ export function Pager({
   }
 
   return (
-    <div className="flex items-center justify-between px-5 py-3 text-[13px] text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-[13px] text-muted-foreground">
       <span>
         Showing <strong className="text-foreground">{shown}</strong>{' '}
         {shown === 1 ? 'secret' : 'secrets'}
         {nextToken ? ' on this page' : ''}
       </span>
-      <div className="flex items-center gap-2">
-        <label className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 whitespace-nowrap">
           Rows per page
           <select
             value={size}

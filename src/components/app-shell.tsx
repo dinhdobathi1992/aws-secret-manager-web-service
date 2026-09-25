@@ -28,10 +28,10 @@ export function AppShell({
   const base = `/a/${encodeURIComponent(current.id)}`
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[1200px] flex-col gap-8 px-5 pt-5 pb-12">
-      <header className="surface sticky top-3 z-40 flex h-16 items-center gap-2 pr-3 pl-4">
+      <header className="surface sticky top-3 z-40 flex min-h-16 flex-wrap items-center gap-x-2 gap-y-1 py-2 pr-3 pl-4 md:flex-nowrap md:py-0">
         <Link
           href={base}
-          className="mr-3 flex items-center gap-2.5 text-[17px] font-semibold text-foreground"
+          className="mr-3 flex shrink-0 items-center gap-2.5 text-[17px] font-semibold whitespace-nowrap text-foreground"
         >
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- runtime-configured URL, not a build asset
@@ -41,7 +41,7 @@ export function AppShell({
               <KeyRoundIcon className="size-5" />
             </span>
           )}
-          {appName}
+          <span className="max-sm:sr-only">{appName}</span>
         </Link>
         <NavTabs
           base={base}
@@ -54,7 +54,7 @@ export function AppShell({
         />
         <div className="flex-1" />
         <span
-          className="flex h-8 items-center gap-2 rounded-lg border bg-sunken px-2.5 text-[13px] text-label"
+          className="hidden h-8 shrink-0 items-center gap-2 rounded-lg border bg-sunken px-2.5 text-[13px] whitespace-nowrap text-label md:flex"
           title="Current AWS account"
         >
           <LayersIcon className="size-3.5 text-muted-foreground" />
@@ -63,19 +63,19 @@ export function AppShell({
         </span>
         <ThemeToggle />
         <span
-          className="flex h-[38px] items-center gap-2.5 rounded-full border bg-sunken pr-3.5 pl-2 text-sm font-medium text-muted-foreground"
+          className="flex h-[38px] shrink-0 items-center gap-2.5 rounded-full border bg-sunken pl-2 text-sm font-medium text-muted-foreground max-xl:pr-2 xl:pr-3.5"
           title={user.upn}
         >
           <span className="inline-flex size-[26px] items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
             {initial(user.name)}
           </span>
-          <span className="max-w-36 truncate">{user.name}</span>
+          <span className="hidden max-w-36 truncate xl:inline">{user.name}</span>
         </span>
         {/* POST, same-origin only (see /api/auth/logout). */}
         <form action="/api/auth/logout" method="post">
           <button
             type="submit"
-            className="flex h-[38px] items-center rounded-md px-3.5 text-sm font-medium text-primary hover:bg-primary-subtle"
+            className="flex h-[38px] items-center rounded-md px-3.5 text-sm font-medium whitespace-nowrap text-primary hover:bg-primary-subtle"
           >
             Logout
           </button>

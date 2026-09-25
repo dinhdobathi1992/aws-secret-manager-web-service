@@ -48,7 +48,7 @@ export function ActivityView({
 
   return (
     <section className="surface overflow-hidden">
-      <div className="flex items-center gap-2.5 border-b px-5 py-4">
+      <div className="flex flex-wrap items-center gap-2.5 border-b px-5 py-4">
         {search('User', user, setUser)}
         {search('Secret name', secret, setSecret, true)}
         <div className="flex-1" />

@@ -211,7 +211,10 @@ export function ValuePanel({
 
   if (!revealed) {
     return (
-      <section aria-label="Value" className="surface flex items-center gap-[18px] px-7 py-6">
+      <section
+        aria-label="Value"
+        className="surface flex flex-col items-start gap-[18px] px-7 py-6 sm:flex-row sm:items-center"
+      >
         <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary-subtle text-primary">
           <LockIcon className="size-[22px]" />
         </span>

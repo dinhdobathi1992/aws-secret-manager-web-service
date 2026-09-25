@@ -146,8 +146,8 @@ export function VersionsPanel({
     'h-11 px-6 text-left text-xs font-semibold tracking-[.04em] text-muted-foreground uppercase'
   return (
     <div className="flex flex-col gap-5">
-      <section aria-label="Versions" className="surface overflow-hidden">
-        <table className="w-full border-collapse text-sm">
+      <section aria-label="Versions" className="surface overflow-x-auto">
+        <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead className="border-b bg-sunken">
             <tr>
               <th className={cn(th, 'w-[260px]')}>Version</th>

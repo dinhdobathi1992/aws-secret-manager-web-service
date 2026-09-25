@@ -80,7 +80,7 @@ export function ViewSecretDialog({
       <Dialog open={open} onOpenChange={(o) => !o && close()}>
         <DialogContent className="gap-[18px] sm:max-w-[800px]">
           <DialogHeader>
-            <DialogTitle className="text-xl">
+            <DialogTitle>
               View secret: <span className="font-mono text-lg">{name}</span>
             </DialogTitle>
             <DialogDescription>
